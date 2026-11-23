@@ -1,0 +1,31 @@
+name: Build JOSS Paper Draft (Inara)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'paper.md'
+      - 'paper.bib'
+      - 'results/figures/**'
+  pull_request:
+    paths:
+      - 'paper.md'
+      - 'paper.bib'
+  workflow_dispatch:
+
+jobs:
+  compile-joss:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile JOSS paper.md with official openjournals/inara
+        uses: openjournals/inara@v0.1.3
+        with:
+          paper-path: paper.md
+          journal: joss
+          output-format: pdf
+      - name: Upload compiled JOSS paper.pdf artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: joss-paper-pdf
+          path: paper.pdf

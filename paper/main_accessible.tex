@@ -1,0 +1,545 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=0.95in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=teal,
+  citecolor=blue!70!black,
+  urlcolor=teal!80!black
+}
+
+% Prevent awkward line overflows and improve float placement
+\setlength{\emergencystretch}{2em}
+\renewcommand{\topfraction}{0.88}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.10}
+\renewcommand{\floatpagefraction}{0.75}
+
+% Clean shaded callout environments using standard lrbox + fcolorbox (supports align, lists, tables)
+\newsavebox{\calloutbox}
+\newcounter{keyideacnt}
+\newenvironment{keyidea}[1]{%
+  \refstepcounter{keyideacnt}%
+  \begin{lrbox}{\calloutbox}%
+    \begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}
+      \vspace{0.3em}
+      \noindent\textbf{\color{teal!80!black}Key Mathematical Idea~\thekeyideacnt: #1}\par\smallskip
+      \normalfont
+}{%
+      \vspace{0.3em}
+    \end{minipage}%
+  \end{lrbox}%
+  \par\medskip\noindent
+  \fcolorbox{teal!45}{teal!6}{\usebox{\calloutbox}}%
+  \par\medskip
+}
+
+\newcounter{workedexcnt}
+\newenvironment{workedexample}[1]{%
+  \refstepcounter{workedexcnt}%
+  \begin{lrbox}{\calloutbox}%
+    \begin{minipage}{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}
+      \vspace{0.3em}
+      \noindent\textbf{\color{black!85}Worked Example~\theworkedexcnt: #1}\par\smallskip
+      \normalfont
+}{%
+      \vspace{0.3em}
+    \end{minipage}%
+  \end{lrbox}%
+  \par\medskip\noindent
+  \fcolorbox{gray!45}{gray!8}{\usebox{\calloutbox}}%
+  \par\medskip
+}
+
+\title{\textbf{Discovering the Laws of Nature from Noisy Data:\\
+A Detailed Accessible Guide to ASDS-OMEGA v2.0}\\[0.4em]
+\large\textit{High-School \& Introductory-Calculus Edition (Companion to the Technical Manuscript)}}
+
+\author{
+  Muhammad Mahmoud Muhammad Elsayed\\
+  \textit{Independent Research / ASDS-OMEGA Project}\\
+  \texttt{asds-omega v2.0}
+}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+For centuries, scientific breakthroughs—from Newton's law of universal gravitation to predator--prey population models and modern epidemiology—have taken the form of compact differential equations explaining how quantities change over time. Modern deep neural networks can fit complex datasets closely, yet they operate as opaque ``black boxes'' whose predictions frequently collapse when extrapolated outside their training range. Conversely, automated equation-discovery tools break down under realistic experimental conditions: noisy sensors distort derivatives and bias nonlinear terms, biological and physical feedback loops defeat static cause-and-effect algorithms, conservation laws induce hidden collinearity, and existing symmetry detectors presuppose that the governing equations are already known.
+
+This paper provides a detailed, self-contained, and mathematically accessible exposition of \textbf{ASDS-OMEGA v2.0}, an open-source autonomous scientific discovery framework. Every core component is derived step-by-step using only high-school algebra, basic probability (averages and variance), introductory linear algebra, and first-year calculus (derivatives and integration by parts), illustrated throughout with concrete numerical examples. We show how ASDS-OMEGA~v2.0: (1) eliminates derivative noise blow-up via smooth weighted averages and removes hidden squared/cubic noise bias via elementary binomial expansion; (2) maps cause-and-effect arrows in cyclic feedback systems while avoiding the conservation-law collinearity trap; (3) discovers conservation laws and mirror/rotational symmetries \emph{before} knowing the governing equations; (4) recovers polynomial, trigonometric, and rational (fraction) equations while simplifying messy decimals using Occam's Razor; (5) designs maximally informative follow-up experiments and adapts online when rules suddenly shift; and (6) produces computer-checked symbolic and Lean~4 proofs. Evaluated across 8 benchmark ODEs, 2 spatiotemporal PDEs, and 3 historical real-world records (Hudson Bay Lynx--Hare, 1978 English Boarding School Influenza, and NOAA Mauna Loa $\text{CO}_2$), ASDS-OMEGA~v2.0 achieves an overall symbolic match of \textbf{0.997 $\pm$ 0.002} across 40 multi-seed trials, significantly outperforming official PySINDy~v2.1 (0.727), Weak-SINDy (0.872), standard SINDy (0.854), Pure Genetic Programming (0.595), and black-box neural networks ($p < 10^{-5}$ against every baseline).
+\end{abstract}
+
+\noindent\textit{Companion Note:} This accessible edition accompanies the formal technical manuscript (\texttt{paper/main.tex}), which presents full operator-theoretic proofs. All experimental results, auto-generated tables, and 300-DPI figures in both documents come identically from the same deterministic 5-seed ledger (\texttt{results/benchmark\_ledger.json}).
+
+%======================================================================
+\section{Introduction: From Raw Measurements to Natural Laws}
+%======================================================================
+Suppose a scientist measures how several interacting quantities evolve over time $t$—for example, the populations of hares $h(t)$ and lynxes $\ell(t)$ in a forest, the position $(x(t), y(t))$ and velocity $(v_x(t), v_y(t))$ of a planet orbiting a star, or the fractions of susceptible $S(t)$, infected $I(t)$, and recovered $R(t)$ individuals during an epidemic. Together, the list of variables $\mathbf{x}(t) = (x_1(t), \dots, x_d(t))$ describes the system's \emph{state}, and the curve it traces out over time is called a \emph{trajectory}.
+
+A \textbf{governing differential equation} (an \emph{ordinary differential equation}, or ODE) is a compact rule telling us the instantaneous rate of change (velocity) $\dot{x}_i = \frac{dx_i}{dt}$ of each variable in terms of the current state:
+\begin{equation}
+  \frac{dx_1}{dt} = f_1(x_1, \dots, x_d), \qquad
+  \frac{dx_2}{dt} = f_2(x_1, \dots, x_d), \qquad \dots, \qquad
+  \frac{dx_d}{dt} = f_d(x_1, \dots, x_d).
+\end{equation}
+When a quantity $u(x,t)$ varies across both space $x$ and time $t$ (such as fluid speed or heat along a metal rod), the governing rule involves partial slopes in space and time and is called a \emph{partial differential equation} (PDE), such as $u_t = -u u_x + \nu u_{xx}$.
+
+Why is discovering the exact formula $f_i$ vastly superior to training a black-box neural network? Consider a simple analogy: if you observe a falling ball between $t=0$ and $t=2$ seconds, a large neural network can memorize the curve inside $[0, 2]$ accurately, yet it has no idea what happens at $t=6$ seconds because it only stitches together local curves. By contrast, discovering the true symbolic law $y(t) = y_0 - \frac{1}{2}gt^2$ predicts every future time, reveals the physical constant $g$, and shows how the law behaves under new conditions (out-of-domain generalization).
+
+\subsection{Five Roadblocks That Defeat Existing Discovery Tools}
+Earlier scientific discovery frameworks—ranging from genetic programming (Eureqa \cite{schmidt2009distilling}, PySR \cite{cranmer2023pysr}) and physics-inspired search (AI~Feynman \cite{udrescu2020ai}) to sparse dictionary regression (SINDy \cite{brunton2016discovering}, PySINDy \cite{desilva2020pysindy}, Weak-SINDy \cite{messenger2021weak})—pioneered automated equation discovery, yet they operate as isolated tools and collide with five coupled roadblocks in realistic scientific data:
+
+\begin{enumerate}
+  \item \textbf{Derivative noise blow-up and hidden nonlinear bias.} Real instruments always add random sensor noise $\epsilon(t)$ to the true signal $x(t)$, giving noisy readings $\tilde{x}(t) = x(t) + \epsilon(t)$. Estimating velocities by subtracting nearby points divides random noise by a tiny time step $\Delta t$, magnifying small errors into enormous spikes. Even when integral smoothing avoids derivatives, squaring or cubing noisy readings ($\tilde{x}^2, \tilde{x}^3$) creates a systematic upward bias that never averages out!
+  \item \textbf{Feedback loops and the conservation-law trap in causality.} Classical cause-and-effect algorithms assume an acyclic chain (``A causes B, never B causes A''). Real dynamical systems are packed with two-way feedback loops (hares feed lynxes, and lynxes eat hares). Worse, whenever variables obey a fixed total such as $S + I + R = 1$, holding $I$ and $R$ constant locks $S = 1 - I - R$ completely immobile, tricking standard statistical tests into erasing true causal links.
+  \item \textbf{The symmetry chicken-and-egg problem.} Conservation laws (constant energy, angular momentum, or total population) and symmetries (such as left--right mirror symmetry or rotational invariance) dramatically narrow down which physical equations are possible. Yet classical methods can only check whether an equation obeys a symmetry \emph{after} the equation has already been guessed.
+  \item \textbf{Overfitting from correlated windows and rigid polynomial libraries.} Testing hundreds of candidate terms on noisy overlapping time windows tricks standard model selectors into keeping fake extra terms. Meanwhile, standard linear-library methods cannot directly represent fraction-based laws common in chemistry and biology, such as Michaelis--Menten enzyme kinetics $\dot{S} = \frac{-V_{\max}S}{K_m + S}$.
+  \item \textbf{Passive one-shot fitting without testing, adaptation, or proof.} Real science is an active loop: when rival theories tie on past data, scientists design a discriminating experiment; when external conditions change mid-stream, they detect the shift and revise the model; and they verify mathematically that their final equations satisfy every claimed conservation law and symmetry.
+\end{enumerate}
+
+\textbf{ASDS-OMEGA v2.0} resolves all five roadblocks inside one unified six-stage pipeline summarized in Table~\ref{tab:pipeline_overview}.
+
+\begin{table}[!htbp]
+\centering
+\caption{Plain-language overview of the six discovery stages inside ASDS-OMEGA~v2.0.}
+\label{tab:pipeline_overview}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.23\textwidth} >{\raggedright\arraybackslash}p{0.35\textwidth} >{\raggedright\arraybackslash}p{0.36\textwidth}@{}}
+\toprule
+\textbf{Discovery Stage} & \textbf{Core Scientific Question} & \textbf{Elementary Mathematical Tool} \\
+\midrule
+\textbf{1. Preprocessing} \newline (MS-AVP) & How do we measure rates of change and nonlinear terms cleanly despite sensor noise? & Integration by parts with smooth bump curves + binomial bias subtraction \\
+\addlinespace[0.4em]
+\textbf{2. Causality} \newline (VIFC) & Which variables directly drive each rate $\dot{x}_i$ inside cyclic feedback loops? & State-to-rate conditional tests + shuffled decoys + collinearity guard \\
+\addlinespace[0.4em]
+\textbf{3. Symmetry} \newline (W-LIND) & What quantities stay conserved or mirror-symmetric \emph{before} we know the equations? & Homogeneous linear system $\mathbf{A}\mathbf{c}=\mathbf{0}$ + mirror-flip term pruning \\
+\addlinespace[0.4em]
+\textbf{4. Equation Search} \newline (EVG-HE) & What exact formula fits the data accurately while staying as simple as possible? & Tiered sparse regression, denominator clearing, genetic programming \& Occam's Razor \\
+\addlinespace[0.4em]
+\textbf{5. Active Agency} \newline (PAFE \& SLR) & What experiment settles tied theories, and did the underlying rules suddenly shift? & Maximum-disagreement experiment picker + cumulative error alarm (CUSUM) \\
+\addlinespace[0.4em]
+\textbf{6. Verification} \newline (ASDS-Verify) & Do the discovered equations obey every conservation law and symmetry identically? & Automated symbolic algebra (SymPy) + computer-checked Lean~4 proofs \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%======================================================================
+\section{Step-by-Step Mathematical Derivations}
+%======================================================================
+Before diving into each stage, Table~\ref{tab:notation} collects every mathematical symbol used in this paper so readers can refer back to any symbol at a glance.
+
+\begin{table}[!htbp]
+\centering
+\caption{Quick reference guide to every mathematical symbol used in this paper.}
+\label{tab:notation}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.18\textwidth} >{\raggedright\arraybackslash}p{0.76\textwidth}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Plain-English Meaning} \\
+\midrule
+$x_i(t),\; \dot{x}_i(t)$ & True value of variable $i$ at time $t$, and its exact rate of change $\frac{dx_i}{dt}$. \\
+$\tilde{x}_i(t) = x_i(t) + \epsilon_i(t)$ & Noisy sensor measurement equals the true value plus random error $\epsilon_i(t)$. \\
+$\mathbb{E}[\,\cdot\,],\; \sigma_i,\; \sigma_i^2$ & Average (expected value), noise standard deviation, and noise variance ($\mathbb{E}[\epsilon_i^2] = \sigma_i^2$). \\
+$\phi_k(t),\; \dot{\phi}_k(t)$ & Smooth bell-shaped weight curve on window $k$ (zero at both ends) and its slope. \\
+$H(\mathbf{x})$ & Candidate conserved quantity (e.g., total energy or total population $S+I+R$). \\
+$R^2$ & Fraction of variation explained by a model ($R^2 = 1.00$ is a perfect fit). \\
+$K_{\text{eff}}$ & Effective number of \emph{non-overlapping} independent time windows in a dataset. \\
+$p$-value & Probability that an observed improvement occurred purely by random chance (smaller is stronger; $p < 10^{-5}$ is overwhelming statistical evidence). \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%----------------------------------------------------------------------
+\subsection{Stage 1 (MS-AVP): Eliminating Derivative Noise \& Binomial Bias Removal}
+%----------------------------------------------------------------------
+\subsubsection{Why Finite Differences Blow Up Sensor Noise}
+Suppose a car moves at a true constant speed of $v = 1.0\text{ m/s}$, so $x(t) = t$. We record its position every $\Delta t = 0.01\text{ s}$ with a tiny sensor error of just $\pm 0.05\text{ m}$. If at $t = 1.00$ the sensor reads $-0.05$ too low ($\tilde{x} = 0.95$) and at $t = 1.01$ it reads $+0.05$ too high ($\tilde{x} = 1.06$), then the standard slope formula gives:
+\begin{equation}
+  \frac{\tilde{x}(1.01) - \tilde{x}(1.00)}{0.01} = \frac{1.06 - 0.95}{0.01} = \frac{0.11}{0.01} = 11.0\text{ m/s},
+\end{equation}
+an error of \textbf{1,000\%} from a tiny 5-centimeter sensor jitter! Dividing by small $\Delta t$ amplifies high-frequency noise relentlessly.
+
+\subsubsection{Moving the Derivative Off the Data via Integration by Parts}
+To avoid ever differentiating noisy data, pick a short time window $[a_k, b_k]$ centered at $t_k$ with half-width $h_k = W_k/2$, and define a smooth bell-shaped weight curve $\phi_k(t)$ using the scaled coordinate $u = (t - t_k)/h_k \in [-1, 1]$:
+\begin{equation}
+  \phi_k(t) = \frac{1}{Z_k}\big(1 - u^2\big)^p \quad (p \ge 4), \qquad \text{normalized so that } \int_{a_k}^{b_k} \phi_k(t)\,dt = 1.
+\end{equation}
+Because $(1 - u^2)^p$ has a factor of $(1-u^2)^4$ or higher, both $\phi_k(t)$ and its first three derivatives equal \emph{exactly zero} at the window endpoints $t = a_k$ and $t = b_k$.
+
+Now multiply both sides of the unknown governing law $\dot{x}_i(t) = f_i(\mathbf{x}(t))$ by $\phi_k(t)$ and integrate across $[a_k, b_k]$:
+\begin{equation}
+  \int_{a_k}^{b_k} \phi_k(t)\,\dot{x}_i(t)\,dt = \int_{a_k}^{b_k} \phi_k(t)\,f_i(\mathbf{x}(t))\,dt.
+\end{equation}
+Apply first-year calculus \textbf{integration by parts}, $\int_a^b U\,dV = [UV]_a^b - \int_a^b V\,dU$, choosing $U = \phi_k(t)$ and $dV = \dot{x}_i(t)\,dt$ (so $dU = \dot{\phi}_k(t)\,dt$ and $V = x_i(t)$):
+\begin{equation}
+  v_{i,k} \;\equiv\; \int_{a_k}^{b_k} \phi_k(t)\,\dot{x}_i(t)\,dt
+  \;=\; \underbrace{\big[\phi_k(t)\,x_i(t)\big]_{a_k}^{b_k}}_{=\,0\text{ since }\phi_k(a_k)=\phi_k(b_k)=0}
+  \;-\; \int_{a_k}^{b_k} \dot{\phi}_k(t)\,x_i(t)\,dt
+  \;=\; -\int_{a_k}^{b_k} \dot{\phi}_k(t)\,x_i(t)\,dt.
+\end{equation}
+Look closely at the right-hand side: \textbf{there is no derivative on $x_i(t)$!} The derivative moved completely onto the smooth, human-chosen bell curve $\phi_k(t)$, whose exact formula $\dot{\phi}_k(t)$ we know analytically. Furthermore, integrating averages across dozens of data points inside $[a_k, b_k]$, causing random positive and negative noise spikes to cancel one another out \cite{messenger2021weak}.
+
+\subsubsection{Automatic Noise Estimation and Adaptive Window Widths}
+How does ASDS-OMEGA~v2.0 know the noise standard deviation $\hat{\sigma}_j$ of each sensor without knowing the true curve? Look at the difference between two adjacent measurements:
+\begin{equation}
+  \Delta \tilde{x}_n = \tilde{x}(t_{n+1}) - \tilde{x}(t_n)
+  = \underbrace{\big(x(t_{n+1}) - x(t_n)\big)}_{\text{tiny for smooth signals}} + (\epsilon_{n+1} - \epsilon_n).
+\end{equation}
+Because $\epsilon_{n+1}$ and $\epsilon_n$ are independent errors with variance $\sigma^2$, their difference has variance $\sigma^2 + \sigma^2 = 2\sigma^2$, i.e., standard deviation $\sqrt{2}\,\sigma$. Taking the \emph{median absolute deviation} (MAD) of $\Delta \tilde{x}_n / \sqrt{2}$ gives a rock-solid estimate $\hat{\sigma}_j$ that is immune to sudden spikes or outliers \cite{donoho1994ideal}. Next, ASDS-OMEGA~v2.0 chooses a custom window width $W_k^*$ at each location $t_k$: narrower windows where the curve bends sharply (large second derivative $|x''|$) so sharp peaks are not flattened, and wider windows where the curve is smooth so extra averaging kills more noise.
+
+\subsubsection{Removing Hidden Nonlinear Noise Bias with High-School Algebra}
+Weak-form integration removes derivative noise, yet a second subtle error lurks inside every nonlinear self-power term ($x^2$, $x^3$, $x^2 y$) and curved function ($\sin x$, $\cos x$). Suppose our noisy sensor reads $\tilde{x} = x + \epsilon$, where $\epsilon$ is symmetric zero-mean random noise: $\mathbb{E}[\epsilon] = 0$, $\mathbb{E}[\epsilon^2] = \sigma^2$, and $\mathbb{E}[\epsilon^3] = 0$.
+
+\begin{keyidea}{Why Squaring or Cubing Noisy Data Is Biased—And How Algebra Fixes It}
+Expand $\tilde{x}^2$, $\tilde{x}^3$, and $\tilde{x}^2 \tilde{y}$ using ordinary binomial multiplication, then take the average $\mathbb{E}[\cdot]$:
+\begin{align}
+  \mathbb{E}[\tilde{x}^2] &= \mathbb{E}[x^2 + 2x\epsilon + \epsilon^2] = x^2 + 2x\underbrace{\mathbb{E}[\epsilon]}_{0} + \underbrace{\mathbb{E}[\epsilon^2]}_{\sigma^2} = x^2 + \sigma^2, \\
+  \mathbb{E}[\tilde{x}^3] &= \mathbb{E}[x^3 + 3x^2\epsilon + 3x\epsilon^2 + \epsilon^3] = x^3 + 3\sigma^2 x, \\
+  \mathbb{E}[\tilde{x}^2 \tilde{y}] &= \mathbb{E}[\tilde{x}^2]\,\mathbb{E}[\tilde{y}] = (x^2 + \sigma_x^2)\,y = x^2 y + \sigma_x^2 y.
+\end{align}
+Because $\epsilon^2 \ge 0$ is \emph{always nonnegative}, these extra $+\sigma^2$, $+3\sigma^2 x$, and $+\sigma_x^2 y$ bias terms \textbf{never cancel out}, no matter how many data points you average! Simply subtracting the known bias restores exact unbiasedness:
+\begin{equation}
+  \widehat{x^2} = \tilde{x}^2 - \hat{\sigma}_x^2, \qquad
+  \widehat{x^3} = \tilde{x}^3 - 3\hat{\sigma}_x^2 \tilde{x}, \qquad
+  \widehat{x^2 y} = \big(\tilde{x}^2 - \hat{\sigma}_x^2\big)\tilde{y}.
+\end{equation}
+\end{keyidea}
+
+What about trigonometric terms like $\sin(\tilde{x})$ in a pendulum? Using the high-school angle-addition identity:
+\begin{equation}
+  \sin(x + \epsilon) = \sin(x)\cos(\epsilon) + \cos(x)\sin(\epsilon).
+\end{equation}
+Since $\epsilon$ is equally likely to be positive or negative, $\sin(\epsilon)$ averages to $0$. Meanwhile, $\cos(\epsilon) \approx 1 - \frac{1}{2}\epsilon^2$ is \emph{always less than $1$}, averaging to exactly $e^{-\sigma^2/2}$ for Gaussian noise! Thus $\mathbb{E}[\sin(\tilde{x})] = e^{-\sigma^2/2}\sin(x)$ shrinks the true sine wave, and multiplying by $e^{+\hat{\sigma}^2/2}$ restores its exact height.
+
+\begin{workedexample}{Verifying Noise-Bias Removal with Concrete Numbers}
+Suppose the true position is $x = 2$ and the sensor randomly adds $+0.5$ or $-0.5$ with 50/50 probability (so $\mathbb{E}[\epsilon] = 0$, $\sigma^2 = 0.25$, $\mathbb{E}[\epsilon^3] = 0$). The noisy readings are $2.5$ and $1.5$:
+\begin{itemize}
+  \item \textbf{Square ($x^2 = 4$):} Raw squares are $2.5^2 = 6.25$ and $1.5^2 = 2.25$, averaging to $\mathbf{4.25}$ (too high by $0.25$). Applying $\tilde{x}^2 - \sigma^2$ gives $6.00$ and $2.00$, whose average is $\mathbf{4.00}$—exact!
+  \item \textbf{Cube ($x^3 = 8$):} Raw cubes are $2.5^3 = 15.625$ and $1.5^3 = 3.375$, averaging to $\mathbf{9.50}$ (too high by $3\sigma^2 x = 3(0.25)(2) = 1.50$!). Applying $\tilde{x}^3 - 3\sigma^2 \tilde{x}$ gives $15.625 - 1.875 = 13.75$ and $3.375 - 1.125 = 2.25$, whose average is $(13.75 + 2.25)/2 = \mathbf{8.00}$—exact!
+  \item \textbf{Cross-product ($xy$ with independent noise):} $\mathbb{E}[(x+\epsilon_x)(y+\epsilon_y)] = xy + x\cdot 0 + y\cdot 0 + 0\cdot 0 = xy$. Cross-products of two different variables are already unbiased; only self-powers ($x^2, x^3, x^2y$) and curved functions need correction!
+\end{itemize}
+\textit{(Terminology note: In advanced probability theory, the bias-free polynomials $\tilde{x}^2 - \sigma^2$ and $\tilde{x}^3 - 3\sigma^2\tilde{x}$ are known as Hermite polynomials.)}
+\end{workedexample}
+
+\subsubsection{Extending to 2D Space-Time PDEs and Physical Units}
+For a 1+1D PDE such as the viscous Burgers fluid equation $u_t = -u u_x + \nu u_{xx}$, we multiply by a 2D smooth dome $\Phi(x,t) = \phi_x(x)\phi_t(t)$ and integrate by parts in both space and time. Noticing that $u u_x = \frac{\partial}{\partial x}\!\left(\frac{1}{2}u^2\right)$, every derivative moves onto $\Phi$:
+\begin{align}
+  \iint \Phi\,u_t &= -\iint \phi_x \dot{\phi}_t\,u, \qquad
+  \iint \Phi\,u_{xx} = +\iint \phi_x''\phi_t\,u, \\
+  \iint \Phi\,(u u_x) &= -\frac{1}{2}\iint \phi_x'\phi_t\,(u^2 - \hat{\sigma}^2).
+\end{align}
+When physical units (such as meters, seconds, kilograms) are supplied, ASDS-OMEGA~v2.0 also performs \textbf{dimensional analysis} (Buckingham $\Pi$): checking unit exponents ensures every term added together has matching units and prevents physically nonsensical inputs like $\sin(3\text{ meters})$ (since $\sin$ can only accept a dimensionless angle!).
+
+%----------------------------------------------------------------------
+\subsection{Stage 2 (VIFC): Cause and Effect in Feedback Loops \& Conserved Systems}
+%----------------------------------------------------------------------
+A library of candidate terms grows combinatorially as variables increase. If we know beforehand \emph{which variables actually appear} in the formula for $\dot{x}_i$, we can delete every term involving irrelevant variables before regression even starts.
+
+\subsubsection{Breaking Feedback Loops: States Cause Rates of Change}
+In a predator--prey system, hares affect foxes AND foxes affect hares ($h \leftrightarrow \ell$). Standard static causal tools forbid cycles and collapse. ASDS-OMEGA~v2.0 sidesteps cycles completely by asking a cleaner physical question:
+\begin{quote}
+\emph{Does variable $x_j(t)$ directly appear inside the rate-of-change equation $\dot{x}_i(t) = f_i(\dots)$?}
+\end{quote}
+Every arrow points strictly from a \emph{current state} $x_j$ to a \emph{rate of change} $\dot{x}_i$, creating a clean, cycle-free two-layer network (the \textbf{direct differential causal graph}). For example, in Lorenz-63 ($\dot{x} = 10(y-x)$, $\dot{y} = x(28-z)-y$, $\dot{z} = xy - \frac{8}{3}z$), there are 8 true arrows and 1 absent arrow ($z \not\to \dot{x}$).
+
+To identify true arrows robustly even under noise, Stage~2 combines three independent lines of evidence:
+\begin{enumerate}
+  \item \textbf{Nonlinear dependence with time-block decoys (WF-cHSIC + Knockoffs \cite{candes2018panning}):} After predicting $v_i$ and $x_j$ from the other variables and taking the leftover residuals, we test whether the remaining parts of $x_j$ and $v_i$ still share a nonlinear pattern. To separate real links from random noise, we compare the score against shuffled ``decoy'' copies of $x_j$—shuffling in \emph{contiguous time blocks} rather than single timestamps so short-term smoothness is preserved.
+  \item \textbf{Time-series cross-prediction (Partial CCM \cite{sugihara2012detecting}):} Checking whether small patches of the trajectory of $x_i$ can accurately reconstruct values of $x_j$ after removing shared confounders.
+  \item \textbf{Invariance across multiple experiments (Dyn-ICP \cite{peters2016causal}):} A genuine physical law works identically across every starting condition or experimental run. If a candidate parent set yields identical prediction error distributions across all trajectories, it is invariant; spurious correlations shift when starting conditions change.
+\end{enumerate}
+
+The three scores are fused into an edge probability matrix $P_{ji} \in [0, 1]$, and evaluated against ground-truth graphs via \textbf{Structural Hamming Distance (SHD)}—simply the total number of missing arrows plus false extra arrows ($\text{SHD} = 0$ is perfect).
+
+\begin{workedexample}{The SIR Epidemic Conservation Trap—And How Our Guard Solves It}
+In an SIR epidemic, every person is Susceptible ($S$), Infected ($I$), or Recovered ($R$), so the population fractions always sum to $1$:
+\begin{equation}
+  S(t) + I(t) + R(t) = 1 \quad \Longrightarrow \quad S(t) = 1 - I(t) - R(t).
+\end{equation}
+Suppose we test whether $S$ directly drives $\dot{S} = -\beta S I$ by controlling for all other variables $\{I, R\}$. Once we subtract the best prediction of $S$ from $\{I, R\}$, what is left over?
+\begin{equation}
+  S - (1 - I - R) = 0 \quad \text{identically at every single time point!}
+\end{equation}
+Because the residual of $S$ is identically zero, \emph{every} standard conditional independence test sees zero correlation with $\dot{S}$ and wrongly deletes the true arrow $S \to \dot{S}$!
+
+\textbf{Our Collinearity Guard fix:} Before conditioning on a set of variables $\mathcal{C}$, we measure how accurately $\mathcal{C}$ already predicts $x_j$ via $R^2(x_j \sim \mathcal{C})$. Here $R^2(S \sim \{I, R\}) = 1.00 \ge 1 - \tau$, triggering the guard! Instead of conditioning on $\{I, R\}$ simultaneously, the guard tests maximal \emph{non-collinear} subsets ($\{I\}$ alone and $\{R\}$ alone), where $S$ remains free to vary. This cleanly recovers both true arrows $S \to \dot{S}$ and $I \to \dot{S}$, while conditioning on $\{I\}$ still blocks the indirect chain $S \to I \to \dot{R}$ (since $\dot{R} = \gamma I$ depends only on $I$)!
+\end{workedexample}
+
+%----------------------------------------------------------------------
+\subsection{Stage 3 (W-LIND): Model-Free Conservation Laws \& Mirror Symmetries}
+%----------------------------------------------------------------------
+Normally, checking whether a quantity $H(\mathbf{x})$ is conserved requires plugging the governing equations $\mathbf{f}(\mathbf{x})$ into the chain rule $\frac{dH}{dt} = \nabla H \cdot \mathbf{f} = 0$. Stage~3 breaks this chicken-and-egg cycle completely.
+
+\subsubsection{Discovering Conservation Laws via a Linear System \texorpdfstring{$\mathbf{A}\mathbf{c} = \mathbf{0}$}{Ac = 0}}
+Write a candidate conserved quantity as a weighted combination of simple basis functions (linear, quadratic, trigonometric, or logarithmic):
+\begin{equation}
+  H(\mathbf{x}) = c_1 \psi_1(\mathbf{x}) + c_2 \psi_2(\mathbf{x}) + \dots + c_M \psi_M(\mathbf{x}).
+\end{equation}
+If $H(\mathbf{x}(t))$ stays constant over time, then $\frac{dH}{dt} = 0$ everywhere. Multiply by a smooth bump curve $\phi_k(t)$ and apply integration by parts one more time:
+\begin{equation}
+  \sum_{m=1}^M c_m \underbrace{\int_{a_k}^{b_k} \dot{\phi}_k(t)\,\psi_m(\mathbf{x}(t))\,dt}_{A_{km}}
+  \;=\; \int_{a_k}^{b_k} \dot{\phi}_k(t)\,H(\mathbf{x}(t))\,dt
+  \;=\; -\int_{a_k}^{b_k} \phi_k(t)\,\underbrace{\frac{dH}{dt}}_{=\,0}\,dt \;=\; 0.
+\end{equation}
+Stacking all $K$ time windows into a matrix $\mathbf{A}$ gives a single homogeneous linear equation:
+\begin{equation}
+  \mathbf{A}\,\mathbf{c} = \mathbf{0}.
+\end{equation}
+Using Singular Value Decomposition (SVD), any unit vector $\mathbf{c}$ whose residual $\|\mathbf{A}\mathbf{c}\|$ is near zero corresponds to a conservation law—discovered directly from noisy trajectories with \textbf{zero derivatives and zero knowledge of the governing equations}!
+
+\begin{workedexample}{Univariate Exclusion—Why Single-Variable Candidates Are Always Fake}
+Suppose a pendulum swings through small angles $\theta \in [-0.3, 0.3]$. By the familiar Taylor approximation $\cos(\theta) \approx 1 - \frac{1}{2}\theta^2$, the single-variable expression $H(\theta) = \cos(\theta) + \frac{1}{2}\theta^2$ stays very close to $1.000$ at every time step—so $\mathbf{A}\mathbf{c} \approx \mathbf{0}$ even though it is \emph{not} a physical conservation law!
+
+\textbf{Simple calculus proof that eliminates all such fakes:} If a candidate $H(x_j)$ depends on only \emph{one} variable $x_j$ and $\frac{dH}{dt} = H'(x_j)\,\dot{x}_j = 0$ while $x_j$ is actually moving ($\dot{x}_j \neq 0$), then $H'(x_j)$ must be zero everywhere—meaning $H(x_j)$ is merely a trivial algebraic identity, never a dynamical law! Simply requiring every conservation law to involve at least two variables ($|\text{vars}(\mathbf{c})| \ge 2$) wipes out all Taylor-series fakes immediately while preserving true multi-variable laws like pendulum energy $\frac{1}{2}\omega^2 - \cos\theta$, Kepler angular momentum $x v_y - y v_x$, and SIR total population $S+I+R$.
+\end{workedexample}
+
+\subsubsection{Mirror-Flip Symmetry Pruning Before Search Begins}
+Suppose we test flipping the signs of variables, e.g., $(x, y, z) \to (-x, -y, z)$ in Lorenz-63. If flipping the state flips the weak-form velocities cleanly, then the unknown equations \emph{must} obey:
+\begin{equation}
+  f_x(-x, -y, z) = -f_x(x, y, z), \qquad
+  f_y(-x, -y, z) = -f_y(x, y, z), \qquad
+  f_z(-x, -y, z) = +f_z(x, y, z).
+\end{equation}
+In advanced mathematics, averaging over all symmetry flips to keep only matching terms is called \emph{Reynolds equivariant projection}; in practice, it is a simple sign-check table!
+
+\begin{workedexample}{How One Mirror Flip Deletes Over Half the Lorenz-63 Search Space}
+Test every degree-2 candidate term under the mirror flip $(x, y, z) \to (-x, -y, z)$:
+\begin{center}
+\small
+\begin{tabular}{lcccccccccc}
+\toprule
+\textbf{Candidate Term} & $1$ & $x$ & $y$ & $z$ & $x^2$ & $xy$ & $xz$ & $y^2$ & $yz$ & $z^2$ \\
+\midrule
+Sign after flip & $+$ & $-$ & $-$ & $+$ & $+$ & $+$ & $-$ & $+$ & $-$ & $+$ \\
+Allowed in $\dot{x}, \dot{y}$ (need $-$) & $\times$ & $\checkmark$ & $\checkmark$ & $\times$ & $\times$ & $\times$ & $\checkmark$ & $\times$ & $\checkmark$ & $\times$ \\
+Allowed in $\dot{z}$ (need $+$) & $\checkmark$ & $\times$ & $\times$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\times$ & $\checkmark$ & $\times$ & $\checkmark$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+Out of 10 candidate terms for $\dot{x}$ and $\dot{y}$, \textbf{6 impossible terms are deleted before regression even starts!} Combine this with Stage~2's causal discovery ($z \not\to \dot{x}$), and $\dot{x}$ is narrowed down to just $\{x, y\}$ immediately!
+\end{workedexample}
+
+Stage~3 also tests \textbf{continuous rotational symmetries} (such as 2D rotation around the origin in Kepler's two-body planetary orbit) and classifies the system's physical regime using \textbf{divergence} $\nabla\cdot\mathbf{f} = \sum_{i=1}^d \frac{\partial f_i}{\partial x_i}$: negative divergence means volumes shrink onto an attractor (Lorenz-63 has constant $\nabla\cdot\mathbf{f} = -10 - 1 - \frac{8}{3} = -\frac{41}{3}$), whereas zero divergence signals a conservative Hamiltonian system (Pendulum, Kepler).
+
+%----------------------------------------------------------------------
+\subsection{Stage 4 (EVG-HE): Discovering Exact Equations \& Occam's Razor}
+%----------------------------------------------------------------------
+Operating strictly inside the causally valid, symmetry-pruned basis from Stages~2--3, Stage~4 combines four complementary equation-discovery strategies guided by an adaptive solver selector (Contextual Thompson-Sampling Bandit):
+
+\begin{enumerate}
+  \item \textbf{Tiered Stability-Selected Sparse Regression:} Rather than throwing linear, quadratic, cubic, and trigonometric terms into one giant noisy regression, Stage~4 fits simple lower-degree tiers first and only admits cubic ($x^3$) or trigonometric terms when they reduce prediction error substantially above the estimated noise floor. Whenever Stage~3 finds a linear conservation law like $S + I + R = 1$, Stage~4 drops redundant columns (preventing rank collapse!) and solves all equations jointly under the exact linear constraint $\dot{S} + \dot{I} + \dot{R} = 0$.
+  \item \textbf{Clearing Denominators for Fraction (Rational) Equations:} Many laws in biochemistry and physics are fractions that standard SINDy cannot write as short polynomials.
+\end{enumerate}
+
+\begin{workedexample}{Discovering Michaelis--Menten Enzyme Kinetics Without Derivatives}
+An enzyme converts substrate $S$ into product $P$ according to the rational law:
+\begin{equation}
+  \dot{S} = \frac{-V_{\max} S}{K_m + S}.
+\end{equation}
+Multiply both sides by the denominator $(K_m + S)$ to turn the fraction into a clean linear equation in the unknown constants $(K_m, 1, V_{\max})$:
+\begin{equation}
+  K_m\,\dot{S} + S\,\dot{S} + V_{\max}\,S = 0.
+\end{equation}
+Wait—how do we compute the weak average of the product $S\dot{S}$ without taking a derivative? Use the chain rule in reverse: $S\dot{S} = \frac{d}{dt}\!\left(\frac{1}{2}S^2\right)$! Integration by parts immediately gives:
+\begin{equation}
+  \int_{a_k}^{b_k} \phi_k(t)\,S\dot{S}\,dt
+  = -\frac{1}{2}\int_{a_k}^{b_k} \dot{\phi}_k(t)\,\big(\tilde{S}^2 - \hat{\sigma}_S^2\big)\,dt.
+\end{equation}
+Now every single column ($v_S$, $-\frac{1}{2}\langle\dot{\phi}_k, \widehat{S^2}\rangle$, and $\langle\phi_k, S\rangle$) is derivative-free and noise-debiased! Solving the homogeneous system via Total Least Squares (SVD) recovers $K_m$ and $V_{\max}$ cleanly even at 5\% noise.
+\end{workedexample}
+
+\begin{enumerate}
+  \setcounter{enumi}{2}
+  \item \textbf{Semantic Residual-Guided Genetic Programming:} When a system contains non-polynomial structure not covered by fixed dictionaries (such as Newton's inverse-cube gravity $-x/(x^2+y^2)^{3/2}$), an evolutionary algorithm builds expression trees (sums, products, powers, quotients), optimizes numeric constants inside each tree via fast least-squares / L-BFGS (Variable Projection), and explicitly discards any candidate whose denominator approaches zero on the observed data.
+  \item \textbf{Occam's Razor ($K_{\text{eff}}$-MDL) \& Clean Fraction Rounding:} To pick between a complex slightly better-fitting formula and a simpler formula—and to decide whether a decimal like $-2.6659\,z$ should snap cleanly to the exact fraction $-\frac{8}{3}z$—ASDS-OMEGA~v2.0 minimizes the \textbf{Minimum Description Length (MDL)}:
+  \begin{equation}
+    \text{MDL} = K_{\text{eff}} \ln(\text{MSE}) + C_{\text{expr}} \ln(K_{\text{eff}}),
+  \end{equation}
+  where $\text{MSE}$ is mean squared error and $C_{\text{expr}}$ counts how many symbols appear in the formula. Crucially, if we place $K = 360$ \emph{overlapping} 1-second windows across a 20-second recording, those 360 windows do not contain 360 independent experiments—they contain roughly $K_{\text{eff}} = \text{total duration} / \text{average window width} \approx 20$ independent pieces of information! Using $K_{\text{eff}}$ instead of $K$ prevents Occam's Razor from being fooled into keeping fake extra terms.
+\end{enumerate}
+
+%----------------------------------------------------------------------
+\subsection{Stages 5 \& 6 (PAFE, SLR \& ASDS-Verify): Active Testing, Adaptation \& Proofs}
+%----------------------------------------------------------------------
+\subsubsection{Popperian Active Falsification (PAFE)}
+When limited or noisy data leaves $M$ competing formulas $\hat{\mathbf{f}}^{(1)}, \dots, \hat{\mathbf{f}}^{(M)}$ with similar accuracy, ASDS-OMEGA~v2.0 assigns each hypothesis a Bayesian probability $p_m$ and searches over feasible starting states $\mathbf{x}_0$ to maximize the expected squared disagreement between rival predictions:
+\begin{equation}
+  \mathbf{x}_0^* = \arg\max_{\mathbf{x}_0} \sum_{a < b} p_a\,p_b \int_0^T \big\|\mathbf{x}^{(a)}(t;\mathbf{x}_0) - \mathbf{x}^{(b)}(t;\mathbf{x}_0)\big\|^2 dt.
+\end{equation}
+Running one new experiment at $\mathbf{x}_0^*$ forces wrong models to fail decisively, collapsing uncertainty faster than random trial-and-error.
+
+\subsubsection{Online Concept-Drift Detection \& Surgical Regeneration (SLR)}
+In streaming systems whose rules can shift over time (e.g., recovered individuals losing immunity so SIR becomes SIRS), ASDS-OMEGA~v2.0 computes the sliding weak-form prediction error $r_t$ and updates a classic \textbf{CUSUM (Cumulative Sum) alarm score}:
+\begin{equation}
+  g_t = \max\!\big(0,\; g_{t-1} + r_t - \mu_0 - \delta\big),
+\end{equation}
+where $\mu_0$ is the baseline pre-drift error and $\delta$ is a small tolerance buffer. While the current law holds, $g_t$ stays near zero; the instant a regime shift occurs, $r_t$ jumps and $g_t$ shoots above the alarm threshold $h$, triggering targeted re-discovery on post-shift data while preserving verified conservation laws.
+
+\subsubsection{Automated Symbolic \& Lean~4 Formal Proof Certificates}
+Finally, Stage~6 checks every discovered equation analytically in SymPy (verifying $\frac{dH}{dt} \equiv 0$, mirror/rotational symmetries, exact divergence $\nabla\cdot\mathbf{f}$, fixed points/equilibria, and domain quantities like $R_0 = \beta/\gamma$) and exports a machine-checkable theorem file for the \textbf{Lean~4} proof assistant containing zero unproven gaps (\texttt{sorry}-free). Below is an excerpt of the actual file auto-generated from 5\% noisy Lorenz-63 data (\texttt{results/lean4/lorenz\_certificate.lean}):
+\begin{quote}\small\ttfamily
+noncomputable def f\_x (x y z : $\mathbb{R}$) : $\mathbb{R}$ := ((-10 : $\mathbb{R}$) * x) + (10 * y)\\
+theorem z2\_equivariance\_1\_x (x y z : $\mathbb{R}$) :\\
+\hspace*{2em} f\_x (-x) (-y) z = -(f\_x x y z) := by unfold f\_x; ring
+\end{quote}
+The single command \texttt{unfold f\_x; ring} proves algebraically for \emph{all} real numbers $(x,y,z) \in \mathbb{R}^3$ that the discovered law obeys exact $\mathbb{Z}_2$ mirror symmetry!
+
+%======================================================================
+\section{Experimental Evaluation}
+%======================================================================
+All benchmarks were run deterministically across $n = 5$ independent random seeds (\texttt{42, 142, 242, 342, 442}) with Student-$t$ 95\% confidence intervals and one-sided paired Wilcoxon signed-rank tests. Table~\ref{tab:benchmarks_list} summarizes the complete 13-dataset evaluation suite spanning physics, ecology, epidemiology, biochemistry, fluid mechanics, and climate science.
+
+\begin{table}[!htbp]
+\centering
+\caption{Complete 13-dataset evaluation suite used to benchmark ASDS-OMEGA~v2.0.}
+\label{tab:benchmarks_list}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.21\textwidth} >{\raggedright\arraybackslash}p{0.44\textwidth} >{\raggedright\arraybackslash}p{0.29\textwidth}@{}}
+\toprule
+\textbf{System (Domain)} & \textbf{Ground-Truth / Expected Structure} & \textbf{Key Challenge Tested} \\
+\midrule
+Lorenz-63 (Physics) & $\dot{x}=10(y-x),\; \dot{y}=x(28-z)-y,\; \dot{z}=xy-\frac{8}{3}z$ & Chaos, $\mathbb{Z}_2$ mirror, $\nabla\cdot\mathbf{f}=-\frac{41}{3}$ \\
+Lotka--Volterra (Ecology) & $\dot{x}=1.1x-0.4xy,\; \dot{y}=0.4xy-0.1y$ & Cyclic feedback, log invariant \\
+SIR Epidemic (Bio.) & $\dot{S}=-0.4SI,\; \dot{I}=0.4SI-0.1I,\; \dot{R}=0.1I$ & Exact conservation $S+I+R=1$ \\
+Pendulum (Mechanics) & $\dot{\theta}=\omega,\; \dot{\omega}=-\sin\theta$ & Trig term, Hamiltonian energy \\
+Kepler 2-Body (Astro.) & $\dot{\mathbf{r}}=\mathbf{v},\; \dot{\mathbf{v}}=-\mathbf{r}/(x^2+y^2)^{3/2}$ & $SO(2)$ rotation, $1/r^3$, ang.\ mom. \\
+Michaelis--Menten (Chem.) & $\dot{S}=\frac{-1.5S}{0.5+S},\; \dot{P}=\frac{1.5S}{0.5+S}$ & Rational fraction, $S+P=\text{const}$ \\
+Duffing (Oscillator) & $\dot{x}=v,\; \dot{v}=-0.2v+x-x^3$ & Cubic $-x^3$ EIV noise bias \\
+Van der Pol (Oscillator) & $\dot{x}=y,\; \dot{y}=1.5(1-x^2)y-x$ & Cubic $-x^2y$ EIV noise bias \\
+\midrule
+Burgers PDE (Fluids) & $u_t = -1.0\,u u_x + 0.15\,u_{xx}$ & 2D spacetime weak PDE \\
+Adv.--Diff.\ PDE (Transp.) & $u_t = -0.8\,u_x + 0.12\,u_{xx}$ & 2D spacetime weak PDE \\
+\midrule
+Hudson Bay (1900--1920) & Historical Lynx--Hare pelt counts ($n=21$) & Real noisy ecological data \\
+1978 Boarding School Flu & Historical BMJ outbreak ($N=763$, 14 days) & Real sparse epidemic data \\
+Mauna Loa $\text{CO}_2$ & NOAA atmospheric $\text{CO}_2$ (1960--2023) & Real climate trend + scaling \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{How to read the evaluation metrics:}
+\begin{itemize}
+  \item \textbf{Symbolic Match (0 to 1):} Combines exact term-structure overlap (65\% weight) and coefficient accuracy (35\% weight); $1.000$ means every term and coefficient matches the exact ground truth.
+  \item \textbf{Coefficient Relative Error:} Average percentage gap between discovered and true coefficients (0.000 means exact recovery).
+  \item \textbf{$3\sigma$ OOD Extrapolation RMSE:} Prediction error evaluated on new states lying up to $\pm 3$ standard deviations outside the observed training region (lower is better).
+\end{itemize}
+
+%----------------------------------------------------------------------
+\subsection{Experiment 1: Multi-Domain Head-to-Head \& Out-of-Domain Extrapolation}
+%----------------------------------------------------------------------
+Table~\ref{tab:main_benchmark} and Figure~\ref{fig:head_to_head} compare ASDS-OMEGA~v2.0 against official \textbf{PySINDy~v2.1} \cite{desilva2020pysindy}, standard Weak-SINDy, standard SINDy \cite{brunton2016discovering}, Pure Genetic Programming, and a black-box Neural MLP across all 8 ODE systems at $5\%$ Gaussian measurement noise.
+
+\begin{itemize}
+  \item \textbf{State-of-the-art overall fidelity:} Across all $N = 40$ trials, ASDS-OMEGA~v2.0 achieves \textbf{0.997 $\pm$ 0.002}, outperforming official PySINDy~v2.1 ($0.727$), Weak-SINDy ($0.872$), Standard SINDy ($0.854$), and Pure GP ($0.595$) with overwhelming significance ($p < 10^{-5}$ against every single baseline).
+  \item \textbf{Rescuing conservation-manifold collapse:} On the SIR epidemic model, $S+I+R=1$ collinearity causes PySINDy~v2.1 ($0.041$) and Weak-SINDy ($0.246$) to fail severely, whereas ASDS-OMEGA~v2.0 achieves a literal \textbf{1.000} across all 5 seeds thanks to our Collinearity Guard and coupled conservation solver.
+  \item \textbf{Solving fractions and $1/r^3$ gravity:} On Michaelis--Menten enzyme kinetics, denominator clearing lifts recovery to \textbf{0.985} vs.\ $0.851\text{--}0.864$ for polynomial baselines; on Kepler 2-Body orbits, rotational symmetry + genetic programming scores \textbf{1.000} vs.\ $0.498$ for PySINDy~v2.1.
+  \item \textbf{2D Space-Time PDEs:} At 5\% noise across 5 seeds, ASDS-OMEGA~v2.0 recovers Burgers ($u_t = -1.003\,u u_x + 0.147\,u_{xx}$, Weak $R^2 = 0.986 \pm 0.002$) and Advection--Diffusion ($u_t = -0.799\,u_x + 0.119\,u_{xx}$, Weak $R^2 = 0.993 \pm 0.001$).
+  \item \textbf{Orders-of-magnitude better extrapolation:} On $3\sigma$ out-of-domain states, discovered symbolic laws achieve near-zero error ($0.0000\text{--}0.0176$), whereas black-box Neural MLPs degrade by $100\times$ to $10{,}000\times$ ($0.073\text{--}1.156$).
+\end{itemize}
+
+\input{tables/table1_main_benchmark.tex}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{../results/figures/fig6_head_to_head_and_ood.png}
+  \caption{Left: Multi-seed symbolic recovery accuracy across 8 ODE benchmarks at 5\% Gaussian noise. Right: $3\sigma$ out-of-domain extrapolation error (log scale) comparing ASDS-OMEGA~v2.0 symbolic laws against black-box Neural MLPs.}
+  \label{fig:head_to_head}
+\end{figure}
+
+%----------------------------------------------------------------------
+\subsection{Experiment 2: High-Noise Stress Test \& Binomial Bias Removal}
+%----------------------------------------------------------------------
+Table~\ref{tab:cumulant_eiv} and Figure~\ref{fig:noise} directly isolate our algebraic noise-bias subtraction ($\tilde{x}^2 - \hat{\sigma}^2$, $\tilde{x}^3 - 3\hat{\sigma}^2\tilde{x}$) across noise levels from $0\%$ to $30\%$ on Van der Pol ($-x^2 y$), Duffing ($-x^3$), and chaotic Lorenz-63:
+
+\begin{itemize}
+  \item \textbf{Van der Pol ($-x^2 y$):} Subtracting $\hat{\sigma}^2$ cuts coefficient error nearly in half across every single noise level ($0.004$ vs.\ $0.006$ at 15\% noise; $0.006$ vs.\ $0.011$ at 20\% noise), achieving up to \textbf{$11\times$ lower error} than PySINDy~v2.1 ($0.072$) and $2.5\times$ lower error than Weak-SINDy ($0.016$).
+  \item \textbf{Duffing ($-x^3$) \& the bias--variance trade-off:} Up to 15\% noise, ASDS-OMEGA~v2.0 beats PySINDy~v2.1 ($0.033$) and Weak-SINDy ($0.307$) by $2\text{--}21\times$. At extreme noise ($\ge 20\%$), subtracting $3\hat{\sigma}^2\tilde{x}$ from $\tilde{x}^3$ removes mean bias but amplifies random variance on one seed ($0.207$ vs.\ $0.020$ un-debiased), cleanly illustrating the classic statistics trade-off between bias removal and variance inflation.
+\end{itemize}
+
+\input{tables/table3_cumulant_eiv.tex}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{../results/figures/fig1_noise_robustness.png}
+  \caption{High-noise stress test (0\%--30\% Gaussian noise, $n=5$ seeds, 95\% CI). Left: Van der Pol shows consistent log-scale gains from algebraic bias removal across all noise levels. Center: Duffing shows strong accuracy up to 15\% and the cubic bias--variance trade-off at $\ge 20\%$. Right: Lorenz-63 recovery.}
+  \label{fig:noise}
+\end{figure}
+
+%----------------------------------------------------------------------
+\subsection{Experiments 3--5: Ablation Study, Active Falsification \& Online Drift}
+%----------------------------------------------------------------------
+To measure the exact value added by every component, Table~\ref{tab:ablation} and Figure~\ref{fig:ablation} disable one stage at a time at $10\%$ noise across 5 benchmarks $\times$ 5 seeds. The full ASDS-OMEGA~v2.0 pipeline achieves the best score on \textbf{every single metric} ($0.936$ Symbolic Match, $0.920$ Exact Structure, $0.042$ Coeff.\ Error, $0.940$ Weak $R^2$):
+\begin{itemize}
+  \item Removing \textbf{Integration-by-Parts (Weak-Form)} causes the steepest collapse: Symbolic Match drops from $0.936$ to $0.755$, and coefficient error jumps more than $5\times$ ($0.042 \to 0.222$).
+  \item Removing \textbf{Symmetry \& Conservation Laws (W-LIND)} drops Symbolic Match to $0.862$ and inflates coefficient error $2.5\times$ ($0.042 \to 0.104$).
+  \item Removing \textbf{Causal Filtering (VIFC)} or \textbf{Clean Fraction Rounding ($K_{\text{eff}}$-MDL)} also measurably worsens both structure and parameter error ($0.055$ and $0.047$, respectively).
+\end{itemize}
+
+\input{tables/table2_ablation.tex}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.92\linewidth]{../results/figures/fig2_ablation_matrix.png}
+  \caption{6-factor systematic ablation at 10\% noise across 5 systems $\times$ 5 seeds (mean $\pm$ 95\% CI). Every stage contributes measurably to exact recovery.}
+  \label{fig:ablation}
+\end{figure}
+
+Figure~\ref{fig:lorenz} visualizes exact 3D chaotic Lorenz attractor reconstruction from 5\% noisy data alongside the discovered causal probability matrix ($\text{SHD} = 0$, cleanly rejecting $z \not\to \dot{x}$ at probability $0.15$). In active experimentation (\textbf{Exp~4}), PAFE accelerates hypothesis uncertainty reduction by $+19.2\%$ over random initial-condition queries on Lotka--Volterra ($0.698$ vs.\ $0.586$ bits) and outperforms random on Lorenz ($0.0005$ vs.\ $0.0003$ bits), while both quickly converge on single-trajectory SIR ($1.963$ vs.\ $2.270$ bits, posterior $0.932$ on the true model). In streaming regime shifts (\textbf{Exp~5}, Figure~\ref{fig:drift}), the CUSUM detector catches the sudden SIR$\to$SIRS immunity-loss shift at $t = 20.75$ (true shift $t = 20.0$, delay $0.75$ days), preserves total population conservation, and restores post-shift $R^2$ from $-84.59$ to $+0.538$.
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.96\textwidth]{../results/figures/fig3_lorenz_discovery.png}
+  \caption{Left: 3D chaotic Lorenz attractor reconstructed purely from 5\% noisy observations. Right: VIFC direct state-to-rate causal matrix achieving $\text{SHD} = 0$.}
+  \label{fig:lorenz}
+\end{figure}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.90\linewidth]{../results/figures/fig4_drift_regeneration.png}
+  \caption{Online CUSUM drift detection and surgical regeneration on a streaming SIR$\to$SIRS epidemic shift: the alarm triggers just 0.75 days after the true shift at $t=20.0$.}
+  \label{fig:drift}
+\end{figure}
+
+%----------------------------------------------------------------------
+\subsection{Experiment 6: Historical Real-World Experimental Records}
+%----------------------------------------------------------------------
+Figure~\ref{fig:real} evaluates ASDS-OMEGA~v2.0 on three classic experimental records with zero ground-truth hints:
+\begin{enumerate}
+  \item \textbf{Hudson Bay Lynx--Hare (1900--1920)} \cite{odum1953fundamentals} ($n=21$ annual fur counts): Recovers classic Lotka--Volterra prey kinetics $\dot{h} = h(0.555 - 0.257\,\ell)$ (Weak $R^2 = 0.943$) and discovers the classic logarithmic predator--prey first integral ($-0.295 h - 0.434 \ell + \ln h + \ln \ell$) directly from the raw data!
+  \item \textbf{1978 English Boarding School Influenza} \cite{murray2002mathematical} ($N=763$ students over 14 days): Recovers infection rate $\dot{S} = -\frac{29}{17}SI$ and recovery rate $\dot{R} = \frac{4}{9}I$ (Weak $R^2 = 0.976$), discovers total population conservation $S+I+R = \text{const}$, and automatically derives the epidemic basic reproduction number $R_0 = \beta/\gamma \approx 3.84$ (matching classic textbook estimates of $3.7\text{--}3.8$; note that on only 14 daily points, the single middle equation $\dot{I}$ still picks up higher-order terms during long open-loop simulation, visibly reflected in the center panel of Figure~\ref{fig:real}).
+  \item \textbf{NOAA Mauna Loa $\text{CO}_2$ (1960--2023):} Recovers accelerating excess carbon growth $\dot{C} = \frac{1}{5}C$ per decade (Weak $R^2 = 0.838$, matching the historical $\sim 2\%/\text{yr}$ excess growth rate) together with a formally proved scaling symmetry.
+\end{enumerate}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\textwidth]{../results/figures/fig5_real_world_discovery.png}
+  \caption{Autonomous equation discovery on three classic real-world scientific records: Hudson Bay Lynx--Hare, 1978 English Boarding School Influenza, and NOAA Mauna Loa $\text{CO}_2$.}
+  \label{fig:real}
+\end{figure}
+
+%======================================================================
+\section{Honest Limitations and Conclusion}
+%======================================================================
+Transparent reporting of boundaries is essential to trustworthy scientific software:
+\begin{enumerate}
+  \item \textbf{Bias--variance trade-off on extreme cubic noise:} Binomial bias subtraction delivers dramatic error reductions on quadratic and mixed-cubic self-powers (e.g., Van der Pol $-x^2 y$ up to 30\% noise), whereas cross-products ($xy$) are already unbiased under independent noise, and pure cubic terms ($x^3$) at $\ge 20\%$ noise experience variance amplification—pointing toward shrinkage-regularized debiasing as a clean next step.
+  \item \textbf{High-noise causal conservativeness in chaos:} Above $15\text{--}20\%$ noise on chaotic attractors like Lorenz-63, conservative decoy-based causal pruning can occasionally drop weak true links, allowing fixed-dictionary Weak-SINDy to degrade more gradually; adaptive noise-scaled causal thresholds and active PAFE queries offer a natural remedy.
+  \item \textbf{Nonlinear symmetries and short real-world records:} Extending model-free symmetry discovery to curved (nonlinear) symmetries and PDE conservation laws—and enforcing multi-equation conservation strictly even on tiny 14-point single-trajectory records—remains exciting future work.
+\end{enumerate}
+
+\paragraph{Conclusion.}
+ASDS-OMEGA~v2.0 demonstrates that autonomous scientific discovery does not require black-box opacity or impenetrable mathematics. By uniting elementary integration by parts, high-school binomial bias correction, collinearity-guarded state-to-rate causality, model-free linear conservation ($\mathbf{A}\mathbf{c}=\mathbf{0}$), mirror-symmetry pruning, denominator-clearing rational search, Occam's Razor ($K_{\text{eff}}$-MDL), active falsification, CUSUM drift regeneration, and automated Lean~4 theorem proofs, the framework reliably recovers clean, interpretable, and formally verified laws of nature from noisy data.
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

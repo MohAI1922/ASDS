@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\caption{6-factor systematic ablation at $10\%$ Gaussian noise across 5 benchmarks $\times$ 5 seeds (mean $\pm$ 95\% CI).}
+\label{tab:ablation}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Configuration} & \textbf{Sym. Match} & \textbf{Exact Struct.} & \textbf{Coeff. Rel. Err.} & \textbf{Weak $R^2$} \\
+\midrule
+\textbf{Full ASDS-OMEGA v2.0 (VECSD)} & 0.936 $\pm$ 0.069 & 0.920 $\pm$ 0.082 & 0.042 $\pm$ 0.056 & 0.940 $\pm$ 0.040 \\
+w/o Hermite Cumulant Debiasing & 0.936 $\pm$ 0.069 & 0.920 $\pm$ 0.082 & 0.042 $\pm$ 0.056 & 0.940 $\pm$ 0.040 \\
+w/o MS-AVP Weak-Form (SavGol Diff.) & 0.755 $\pm$ 0.107 & 0.660 $\pm$ 0.135 & 0.222 $\pm$ 0.101 & 0.824 $\pm$ 0.084 \\
+w/o VIFC Causal Masking & 0.921 $\pm$ 0.087 & 0.907 $\pm$ 0.101 & 0.055 $\pm$ 0.063 & 0.940 $\pm$ 0.040 \\
+w/o W-LIND Symmetry / KKT & 0.862 $\pm$ 0.111 & 0.840 $\pm$ 0.126 & 0.104 $\pm$ 0.086 & 0.939 $\pm$ 0.041 \\
+w/o $K_{\text{eff}}$-MDL Rationalizer & 0.932 $\pm$ 0.071 & 0.920 $\pm$ 0.082 & 0.047 $\pm$ 0.056 & 0.940 $\pm$ 0.040 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

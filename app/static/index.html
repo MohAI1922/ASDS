@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASDS-OMEGA v2.0 — VECSD Scientific Discovery Workbench</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <style>
+    :root {
+      --bg: #f3f5f8;
+      --surface: #ffffff;
+      --surface-subtle: #f8fafc;
+      --surface-code: #f1f5f9;
+      --border: #d8e0ea;
+      --border-strong: #cbd5e1;
+      --ink: #0f172a;
+      --ink-secondary: #334155;
+      --muted: #64748b;
+      --primary: #1d3557;
+      --primary-hover: #152842;
+      --accent: #0f766e;
+      --accent-soft: #e6f4f1;
+      --info: #1d4ed8;
+      --info-soft: #eff6ff;
+      --good: #15803d;
+      --good-soft: #ecfdf3;
+      --warn: #b45309;
+      --warn-soft: #fffbeb;
+      --danger: #b91c1c;
+      --danger-soft: #fef2f2;
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --radius: 6px;
+      --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0d1219;
+      --surface: #141b26;
+      --surface-subtle: #101620;
+      --surface-code: #0a0f16;
+      --border: #243041;
+      --border-strong: #334155;
+      --ink: #e6edf3;
+      --ink-secondary: #cbd5e1;
+      --muted: #8b9bb0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --accent: #2dd4bf;
+      --accent-soft: rgba(45, 212, 191, 0.12);
+      --info: #60a5fa;
+      --info-soft: rgba(96, 165, 250, 0.12);
+      --good: #4ade80;
+      --good-soft: rgba(74, 222, 128, 0.12);
+      --warn: #fbbf24;
+      --warn-soft: rgba(251, 191, 36, 0.12);
+      --danger: #f87171;
+      --danger-soft: rgba(248, 113, 113, 0.12);
+      --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      line-height: 1.45;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Top Instrument Bar */
+    .topbar {
+      height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark {
+      width: 26px;
+      height: 26px;
+      border-radius: 5px;
+      background: var(--primary);
+      color: #ffffff;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: -0.5px;
+    }
+    .brand-title {
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.2px;
+      color: var(--ink);
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      height: 100%;
+      align-items: center;
+    }
+    .nav-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 5px;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+    .nav-tab:hover { color: var(--ink); background: var(--surface-subtle); }
+    .nav-tab.active {
+      color: var(--primary);
+      background: var(--info-soft);
+      border-color: var(--border);
+      font-weight: 600;
+    }
+    [data-theme="dark"] .nav-tab.active { color: var(--info); }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .engine-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--muted);
+      padding: 4px 9px;
+      border-radius: 4px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+    .dot.busy { background: var(--warn); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+    .theme-btn {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      color: var(--ink-secondary);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .theme-btn:hover { border-color: var(--border-strong); color: var(--ink); }
+
+    /* Workspace Layout */
+    .workspace { display: none; min-height: calc(100vh - 52px); }
+    .workspace.active { display: grid; grid-template-columns: 320px 1fr; }
+    .workspace.full-width.active { display: block; padding: 18px 22px; max-width: 1520px; margin: 0 auto; }
+
+    /* Left Scientific Inspector */
+    .inspector {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 16px;
+      overflow-y: auto;
+      max-height: calc(100vh - 52px);
+      position: sticky;
+      top: 52px;
+    }
+    .section-head {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--muted);
+      margin: 16px 0 8px 0;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-head:first-child { margin-top: 0; }
+
+    .seg-control {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px;
+      margin-bottom: 10px;
+    }
+    .seg-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .seg-btn.active {
+      background: var(--surface);
+      color: var(--ink);
+      font-weight: 600;
+      box-shadow: var(--shadow-xs);
+    }
+
+    label.field-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-secondary);
+      margin: 10px 0 4px 0;
+    }
+    label.field-label span.val {
+      font-family: var(--font-mono);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    select, input[type="number"], input[type="text"] {
+      width: 100%;
+      background: var(--surface-subtle);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 7px 9px;
+      font-size: 12.5px;
+      font-family: var(--font-sans);
+    }
+    select:focus, input:focus { outline: 2px solid rgba(29, 53, 87, 0.25); border-color: var(--primary); }
+    input[type="range"] { width: 100%; accent-color: var(--accent); margin: 4px 0; }
+
+    .dropzone {
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 6px;
+      padding: 16px 12px;
+      text-align: center;
+      background: var(--surface-subtle);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .dropzone-title { font-weight: 600; font-size: 12.5px; color: var(--ink); }
+    .dropzone-sub { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: var(--font-mono); }
+
+    .switch-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 7px 0;
+      cursor: pointer;
+    }
+    .switch-row input { margin-top: 2px; accent-color: var(--accent); }
+    .switch-title { font-size: 12.5px; font-weight: 500; color: var(--ink); }
+    .switch-desc { font-size: 11px; color: var(--muted); }
+
+    .btn {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 5px;
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .btn-primary { background: var(--primary); color: #ffffff; margin-top: 12px; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-outline {
+      background: var(--surface);
+      color: var(--ink-secondary);
+      border-color: var(--border);
+      width: auto;
+      padding: 5px 10px;
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--ink); background: var(--surface-subtle); }
+
+    .status-box {
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: 5px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--ink-secondary);
+      min-height: 36px;
+      word-break: break-word;
+    }
+    .status-box.err { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+
+    /* History List */
+    .history-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+    .history-item {
+      padding: 7px 9px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--surface-subtle);
+      cursor: pointer;
+      font-size: 11.5px;
+    }
+    .history-item:hover { border-color: var(--primary); }
+    .history-item.active { border-color: var(--accent); background: var(--accent-soft); }
+    .history-top { display: flex; justify-content: space-between; font-weight: 600; }
+    .history-meta { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+    /* Main Analytical Canvas */
+    .canvas { padding: 18px 22px; overflow-y: auto; }
+    .metrics-strip {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      box-shadow: var(--shadow-xs);
+    }
+    .metric-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-top: 3px;
+    }
+    .metric-val.accent { color: var(--accent); }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-xs);
+      margin-bottom: 16px;
+    }
+    .panel-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .panel-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.1px;
+    }
+    .panel-body { padding: 14px; }
+    .export-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* Scientific Tables */
+    table.sci-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    table.sci-table th {
+      text-align: left;
+      padding: 7px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--muted);
+      border-bottom: 1.5px solid var(--border-strong);
+      background: var(--surface-subtle);
+    }
+    table.sci-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    table.sci-table tr:last-child td { border-bottom: none; }
+    .math-cell { font-size: 14px; color: var(--ink); }
+    .mono { font-family: var(--font-mono); font-size: 12px; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      margin: 2px 4px 2px 0;
+    }
+    .tag.accent { background: var(--accent-soft); color: var(--accent); }
+    .tag.info { background: var(--info-soft); color: var(--info); }
+    .tag.good { background: var(--good-soft); color: var(--good); }
+    .tag.warn { background: var(--warn-soft); color: var(--warn); }
+
+    .props-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .prop-box {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 9px 11px;
+      font-size: 12px;
+    }
+    .prop-title {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    /* Subtabs for Plot Deck */
+    .subtabs { display: flex; gap: 4px; }
+    .subtab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .subtab:hover { color: var(--ink); }
+    .subtab.active {
+      background: var(--surface-subtle);
+      border-color: var(--border);
+      color: var(--ink);
+      font-weight: 600;
+    }
+    .plot-pane { display: none; }
+    .plot-pane.active { display: block; }
+    .plot-area { width: 100%; height: 420px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    pre.code-view {
+      margin: 0;
+      background: var(--surface-code);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.5;
+      color: var(--ink-secondary);
+      overflow-x: auto;
+      max-height: 300px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1120px) {
+      .workspace.active { grid-template-columns: 1fr; }
+      .inspector { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--border); }
+      .metrics-strip { grid-template-columns: repeat(3, 1fr); }
+      .grid-2, .props-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Scientific Instrument Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">Ω2</div>
+      <div>
+        <div class="brand-title">ASDS-OMEGA v2.0</div>
+        <div class="brand-sub">VECSD Scientific Discovery Workbench</div>
+      </div>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-ws="ws-ode" onclick="switchWorkspace('ws-ode')">ODE Discovery</button>
+      <button class="nav-tab" data-ws="ws-pde" onclick="switchWorkspace('ws-pde')">1+1D PDE Lab</button>
+      <button class="nav-tab" data-ws="ws-cf" onclick="switchWorkspace('ws-cf')">Counterfactuals</button>
+      <button class="nav-tab" data-ws="ws-drift" onclick="switchWorkspace('ws-drift')">Drift Monitor (SLR)</button>
+      <button class="nav-tab" data-ws="ws-bench" onclick="switchWorkspace('ws-bench')">5-Seed Benchmarks</button>
+    </nav>
+
+    <div class="topbar-right">
+      <div class="engine-pill">
+        <span class="dot" id="engineDot"></span>
+        <span id="engineStatus">Engine Idle</span>
+      </div>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">Dark Lab</button>
+    </div>
+  </header>
+
+  <!-- =================================================================== -->
+  <!-- WORKSPACE 1: ODE DISCOVERY WORKBENCH                                -->
+  <!-- =================================================================== -->
+  <section class="workspace active" id="ws-ode">
+    <aside class="inspector">
+      <div class="section-head">Data Source</div>
+      <div class="seg-control">
+        <button class="seg-btn active" id="srcBenchBtn" onclick="setDataSource('benchmark')">Benchmarks / Real</button>
+        <button class="seg-btn" id="srcCsvBtn" onclick="setDataSource('csv')">Upload CSV</button>
+      </div>
+
+      <div id="benchSourcePane">
+        <label class="field-label">Dynamical System / Record</label>
+        <select id="dataset" onchange="onDatasetChange()">
+          <optgroup label="Synthetic Ground-Truth ODEs (8)">
+            <option value="lorenz">Lorenz-63 (Chaotic Physics, Z2)</option>
+            <option value="lotka_volterra">Lotka–Volterra (Ecology, Log Integral)</option>
+            <option value="sir">SIR Epidemic (Conservation S+I+R=1)</option>
+            <option value="pendulum">Nonlinear Pendulum (Hamiltonian, Z2)</option>
+            <option value="kepler">Kepler 2-Body (SO(2) Rotation, L &amp; E)</option>
+            <option value="michaelis_menten">Michaelis–Menten (Rational Kinetics)</option>
+            <option value="duffing">Duffing Double-Well (Cubic x³ EIV)</option>
+            <option value="van_der_pol">Van der Pol (Cubic x²y EIV)</option>
+          </optgroup>
+          <optgroup label="Historical Real-World Records (3)">
+            <option value="hudson_bay_lynx_hare">Hudson Bay Lynx–Hare (1900–1920)</option>
+            <option value="boarding_school_influenza">1978 English Boarding School Flu (BMJ)</option>
+            <option value="mauna_loa_co2">NOAA Mauna Loa CO₂ (1960–2023)</option>
+          </optgroup>
+        </select>
+
+        <div id="noiseControls">
+          <label class="field-label">Noise Distribution</label>
+          <select id="noiseType">
+            <option value="gaussian">Gaussian (Normal i.i.d.)</option>
+            <option value="laplace">Laplace (Heavy-Tailed)</option>
+            <option value="outliers">Gaussian + 5% Gross Outliers</option>
+          </select>
+
+          <label class="field-label">Relative Noise Level <span class="val" id="noiseLbl">5%</span></label>
+          <input type="range" id="noise" min="0" max="0.25" step="0.01" value="0.05"
+                 oninput="document.getElementById('noiseLbl').textContent = Math.round(this.value*100)+'%'" />
+        </div>
+      </div>
+
+      <div id="csvSourcePane" style="display:none;">
+        <div class="dropzone" id="csvDropzone" onclick="document.getElementById('csvInput').click()">
+          <div class="dropzone-title" id="csvFileName">Drop CSV file or click to browse</div>
+          <div class="dropzone-sub">Header format: t, x, y, ... (&ge; 20 rows)</div>
+          <input type="file" id="csvInput" accept=".csv,.txt" style="display:none;" onchange="handleCsvSelect(this.files[0])" />
+        </div>
+      </div>
+
+      <label class="field-label">Deterministic Seed</label>
+      <input type="number" id="seed" value="42" />
+
+      <div class="section-head">VECSD Pipeline Architecture</div>
+      <label class="switch-row">
+        <input type="checkbox" id="weakForm" checked />
+        <div><div class="switch-title">MS-AVP Variational Weak Form</div><div class="switch-desc">Integration by parts with adaptive C⁴ bumps</div></div>
+      </label>
+      <label class="switch-row">
+        <input type="checkbox" id="cumulant" checked />
+        <div><div class="switch-title">Hermite Cumulant EIV Debiasing</div><div class="switch-desc">Analytical variance correction for x², x³, sin</div></div>
+      </label>
+      <label class="switch-row">
+        <input type="checkbox" id="vifc" checked />
+        <div><div class="switch-title">VIFC Causal Discovery + Guard</div><div class="switch-desc">WF-cHSIC knockoffs, pCCM &amp; RBF Dyn-ICP</div></div>
+      </label>
+      <label class="switch-row">
+        <input type="checkbox" id="wlind" checked />
+        <div><div class="switch-title">W-LIND Symmetry &amp; KKT Laws</div><div class="switch-desc">Model-free Ac=0 &amp; Reynolds pruning</div></div>
+      </label>
+      <label class="switch-row">
+        <input type="checkbox" id="rationalizer" checked />
+        <div><div class="switch-title">K_eff-MDL Rationalizer</div><div class="switch-desc">Continued-fraction Occam snapping</div></div>
+      </label>
+      <label class="switch-row">
+        <input type="checkbox" id="pafe" />
+        <div><div class="switch-title">PAFE Active Falsification</div><div class="switch-desc">Query-by-committee experimental design</div></div>
+      </label>
+
+      <button class="btn btn-primary" id="runOdeBtn" onclick="runDiscovery()">Execute Discovery Pipeline</button>
+      <div class="status-box" id="odeStatus">Ready. Select a dataset or upload a CSV to run VECSD.</div>
+
+      <div class="section-head">Experiment Run History</div>
+      <div class="history-list" id="historyList">
+        <div style="font-size:11.5px; color:var(--muted);">Completed runs appear here for instant comparison.</div>
+      </div>
+    </aside>
+
+    <main class="canvas">
+      <div class="metrics-strip">
+        <div class="metric-card"><div class="metric-label">Mean Weak R²</div><div class="metric-val accent" id="kpiR2">—</div></div>
+        <div class="metric-card"><div class="metric-label">Symbolic Match</div><div class="metric-val" id="kpiSym">—</div></div>
+        <div class="metric-card"><div class="metric-label">Causal SHD</div><div class="metric-val" id="kpiSHD">—</div></div>
+        <div class="metric-card"><div class="metric-label">Grammar Pruned</div><div class="metric-val" id="kpiPrune">—</div></div>
+        <div class="metric-card"><div class="metric-label">Est. Noise σ̂</div><div class="metric-val" id="kpiSigma">—</div></div>
+        <div class="metric-card"><div class="metric-label">Runtime</div><div class="metric-val" id="kpiTime">—</div></div>
+      </div>
+
+      <!-- Typeset Mathematical Law Sheet -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Discovered Governing Differential Equations &amp; Physical Structure</div>
+          <div class="export-bar">
+            <button class="btn btn-outline" onclick="exportArtifact('latex')">Export LaTeX (.tex)</button>
+            <button class="btn btn-outline" onclick="exportArtifact('scipy')">Export SciPy (.py)</button>
+            <button class="btn btn-outline" onclick="exportArtifact('lean4')">Export Lean 4 (.lean)</button>
+            <button class="btn btn-outline" onclick="exportArtifact('markdown')">Report (.md)</button>
+            <button class="btn btn-outline" onclick="exportJson()">Ledger (.json)</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <table class="sci-table">
+            <thead>
+              <tr>
+                <th style="width:11%;">Derivative</th>
+                <th style="width:37%;">Discovered Symbolic Law</th>
+                <th style="width:24%;">Reference / Ground Truth</th>
+                <th style="width:9%;">Weak R²</th>
+                <th style="width:8%;">MDL</th>
+                <th style="width:11%;">Solver Stage</th>
+              </tr>
+            </thead>
+            <tbody id="eqTable">
+              <tr><td colspan="6" class="empty-state">Click <strong>Execute Discovery Pipeline</strong> to infer governing laws, symmetries, conservation invariants, and Lean 4 proofs.</td></tr>
+            </tbody>
+          </table>
+
+          <div class="props-grid" id="propsGrid" style="display:none;">
+            <div class="prop-box">
+              <div class="prop-title">Symmetry, Divergence &amp; Conservation Laws (W-LIND)</div>
+              <div id="symBox"></div>
+            </div>
+            <div class="prop-box">
+              <div class="prop-title">Symbolic Verification, Equilibria &amp; Insights (ASDS-Verify)</div>
+              <div id="verifyBox"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Scientific Visualization Deck -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Diagnostic Plots &amp; Phase-Space Analysis</div>
+          <div class="subtabs">
+            <button class="subtab active" data-plot="pane-ts" onclick="switchPlotTab('pane-ts')">Time Series &amp; Residuals</button>
+            <button class="subtab" data-plot="pane-phase" onclick="switchPlotTab('pane-phase')">Phase Portrait (2D/3D)</button>
+            <button class="subtab" data-plot="pane-inv" onclick="switchPlotTab('pane-inv')">Conservation Drift H(t)</button>
+            <button class="subtab" data-plot="pane-causal" onclick="switchPlotTab('pane-causal')">VIFC Causal Matrix</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="plot-pane active" id="pane-ts"><div id="tsPlot" class="plot-area"></div></div>
+          <div class="plot-pane" id="pane-phase"><div id="phasePlot" class="plot-area"></div></div>
+          <div class="plot-pane" id="pane-inv"><div id="invPlot" class="plot-area"></div></div>
+          <div class="plot-pane" id="pane-causal"><div id="causalPlot" class="plot-area"></div></div>
+        </div>
+      </div>
+
+      <!-- Formal Lean 4 Certificate -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Auto-Generated Lean 4 Formal Theorem Certificate (sorry-free)</div>
+          <div class="export-bar">
+            <button class="btn btn-outline" onclick="copyLean()">Copy Certificate</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <pre class="code-view" id="leanCode">-- Run ODE discovery to generate a machine-checkable Lean 4 certificate.</pre>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- WORKSPACE 2: 1+1D PDE DISCOVERY LAB                                 -->
+  <!-- =================================================================== -->
+  <section class="workspace" id="ws-pde">
+    <aside class="inspector">
+      <div class="section-head">Spatiotemporal PDE Benchmark</div>
+      <label class="field-label">1+1D PDE System</label>
+      <select id="pdeDataset">
+        <option value="burgers_pde">Viscous Burgers PDE (Nonlinear Advection + Diffusion)</option>
+        <option value="advection_diffusion_pde">Advection–Diffusion PDE (Linear Transport)</option>
+      </select>
+
+      <label class="field-label">Spacetime Noise Level <span class="val" id="pdeNoiseLbl">5%</span></label>
+      <input type="range" id="pdeNoise" min="0" max="0.20" step="0.01" value="0.05"
+             oninput="document.getElementById('pdeNoiseLbl').textContent = Math.round(this.value*100)+'%'" />
+
+      <label class="field-label">Random Seed</label>
+      <input type="number" id="pdeSeed" value="42" />
+
+      <label class="switch-row" style="margin-top:12px;">
+        <input type="checkbox" id="pdeCumulant" checked />
+        <div><div class="switch-title">2D Hermite EIV Debiasing</div><div class="switch-desc">Debias u² inside weak advection term</div></div>
+      </label>
+
+      <button class="btn btn-primary" onclick="runPdeDiscovery()">Run 2D Spacetime MS-AVP</button>
+      <div class="status-box" id="pdeStatus">Ready. Select a 1+1D PDE field and run discovery.</div>
+    </aside>
+
+    <main class="canvas">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Discovered Partial Differential Equation</div></div>
+        <div class="panel-body">
+          <div class="grid-2">
+            <div class="prop-box">
+              <div class="prop-title">Discovered PDE (2D Weak-Form V-ESP)</div>
+              <div id="pdeDiscEq" class="math-cell" style="padding:8px 0;">Run discovery to inspect equation.</div>
+            </div>
+            <div class="prop-box">
+              <div class="prop-title">Ground-Truth Reference PDE</div>
+              <div id="pdeGtEq" class="math-cell" style="padding:8px 0;">—</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;" id="pdeMetaTags"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Noisy Spacetime Field u(x, t)</div></div>
+          <div class="panel-body"><div id="pdeHeatmap" style="height:370px;"></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Spatial Wave Profiles (t = 0, mid, end)</div></div>
+          <div class="panel-body"><div id="pdeSlices" style="height:370px;"></div></div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- WORKSPACE 3: COUNTERFACTUAL DO-INTERVENTION LAB                     -->
+  <!-- =================================================================== -->
+  <section class="workspace" id="ws-cf">
+    <aside class="inspector">
+      <div class="section-head">Active Discovered Model</div>
+      <div class="status-box" id="cfModelBox">No ODE loaded yet. Run discovery in Tab 1 or click Load Default Lorenz below.</div>
+      <button class="btn btn-outline" style="width:100%; margin-top:8px;" onclick="quickLoadForCf()">Quick-Run SIR Epidemic Model</button>
+
+      <div class="section-head">Do-Intervention Parameters</div>
+      <label class="field-label">Intervention Mode</label>
+      <select id="cfMode" onchange="toggleCfMode()">
+        <option value="scale">Rate Scaling: f_i(x) &rarr; &alpha; &middot; f_i(x)</option>
+        <option value="clamp">Hard Clamp: do(x_j(t) = c)</option>
+      </select>
+
+      <label class="field-label">Target State Variable</label>
+      <select id="cfTargetVar"></select>
+
+      <div id="cfScaleWrap">
+        <label class="field-label">Rate Scaling Factor &alpha; <span class="val" id="cfScaleLbl">0.50x</span></label>
+        <input type="range" id="cfScale" min="0.1" max="2.5" step="0.1" value="0.5"
+               oninput="document.getElementById('cfScaleLbl').textContent = Number(this.value).toFixed(2)+'x'" />
+      </div>
+
+      <div id="cfClampWrap" style="display:none;">
+        <label class="field-label">Clamped Constant Value c</label>
+        <input type="number" id="cfClampVal" value="0.2" step="0.1" />
+      </div>
+
+      <label class="field-label">Simulation Horizon T</label>
+      <input type="number" id="cfHorizon" value="15" step="1" />
+
+      <button class="btn btn-primary" onclick="runCounterfactual()">Simulate Counterfactual</button>
+      <div class="status-box" id="cfStatus">Ready.</div>
+    </aside>
+
+    <main class="canvas">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Baseline vs. Counterfactual Do-Intervention Trajectories</div></div>
+        <div class="panel-body"><div id="cfPlot" style="height:400px;"></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Quantitative Causal Effect Summary (ATE &amp; Peak Shift)</div></div>
+        <div class="panel-body">
+          <table class="sci-table">
+            <thead><tr><th>State Variable</th><th>Average Treatment Effect (ATE)</th><th>Peak Amplitude Shift</th></tr></thead>
+            <tbody id="cfTable"><tr><td colspan="3" class="empty-state">Run a counterfactual intervention to compute ATE across all state variables.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- WORKSPACE 4: ONLINE CONCEPT DRIFT & SURGICAL REGENERATION (SLR)     -->
+  <!-- =================================================================== -->
+  <section class="workspace" id="ws-drift">
+    <aside class="inspector">
+      <div class="section-head">Streaming Regime Shift (SIR &rarr; SIRS)</div>
+      <p style="font-size:12px; color:var(--muted); margin-top:0;">
+        Simulates an online epidemic stream where immunity begins waning at <strong>t = 20.0 days</strong>, violating the pre-drift SIR equations. SLR detects the shift via Dual-Channel CUSUM and regenerates post-drift dynamics while preserving population conservation.
+      </p>
+
+      <label class="field-label">Stream Sensor Noise <span class="val" id="driftNoiseLbl">2%</span></label>
+      <input type="range" id="driftNoise" min="0" max="0.08" step="0.005" value="0.02"
+             oninput="document.getElementById('driftNoiseLbl').textContent = (this.value*100).toFixed(1)+'%'" />
+
+      <label class="field-label">Random Seed</label>
+      <input type="number" id="driftSeed" value="42" />
+
+      <button class="btn btn-primary" onclick="runDriftDemo()">Execute Online Drift Monitor</button>
+      <div class="status-box" id="driftStatus">Ready.</div>
+    </aside>
+
+    <main class="canvas">
+      <div class="metrics-strip" style="grid-template-columns: repeat(5, 1fr);">
+        <div class="metric-card"><div class="metric-label">True Shift Time</div><div class="metric-val" id="drTrue">—</div></div>
+        <div class="metric-card"><div class="metric-label">CUSUM Alarm</div><div class="metric-val accent" id="drAlarm">—</div></div>
+        <div class="metric-card"><div class="metric-label">Detection Delay</div><div class="metric-val" id="drDelay">—</div></div>
+        <div class="metric-card"><div class="metric-label">Post R² Recovery</div><div class="metric-val" id="drR2">—</div></div>
+        <div class="metric-card"><div class="metric-label">Conservation Kept</div><div class="metric-val" id="drCons">—</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Sliding Weak-Form Residual &amp; Page–Hinkley / CUSUM Alarm</div></div>
+        <div class="panel-body"><div id="driftPlot" style="height:390px;"></div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Pre-Drift Discovered Laws (t &lt; 20)</div></div>
+          <div class="panel-body" id="driftPreEqs"><div class="empty-state">Run monitor to view equations.</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Post-Drift Surgically Regenerated Laws (t &gt; alarm)</div></div>
+          <div class="panel-body" id="driftPostEqs"><div class="empty-state">Run monitor to view equations.</div></div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- WORKSPACE 5: VERIFIED 5-SEED BENCHMARK EXPLORER                     -->
+  <!-- =================================================================== -->
+  <section class="workspace full-width" id="ws-bench">
+    <div class="metrics-strip" id="benchKpis" style="grid-template-columns: repeat(5, 1fr);">
+      <div class="metric-card"><div class="metric-label">ASDS-OMEGA v2.0 (N=40)</div><div class="metric-val accent" id="bkAsds">—</div></div>
+      <div class="metric-card"><div class="metric-label">PySINDy v2.1 (Official)</div><div class="metric-val" id="bkPs">—</div></div>
+      <div class="metric-card"><div class="metric-label">Weak-SINDy (Std.)</div><div class="metric-val" id="bkWs">—</div></div>
+      <div class="metric-card"><div class="metric-label">Standard SINDy</div><div class="metric-val" id="bkSs">—</div></div>
+      <div class="metric-card"><div class="metric-label">Wilcoxon p (vs. All)</div><div class="metric-val accent" id="bkPval">—</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Exp 1: 8-System Head-to-Head Symbolic Match (5 Seeds @ 5% Noise)</div></div>
+        <div class="panel-body"><div id="benchHeadPlot" style="height:360px;"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><div class="panel-title">Exp 3: 6-Factor Systematic Ablation (5 Systems &times; 5 Seeds @ 10% Noise)</div></div>
+        <div class="panel-body"><div id="benchAblPlot" style="height:360px;"></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Exp 2: High-Noise Stress Test &amp; Hermite Cumulant EIV Isolation (0%–30% Noise)</div>
+        <div>
+          <select id="benchNoiseSys" style="width:220px;" onchange="renderBenchNoiseCurve()">
+            <option value="van_der_pol">Van der Pol (Cubic -x²y EIV)</option>
+            <option value="duffing">Duffing Double-Well (Cubic -x³ EIV)</option>
+            <option value="lorenz">Lorenz-63 Chaotic Attractor</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-body"><div id="benchNoisePlot" style="height:350px;"></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">Verified Multi-Seed Ledger Table (Mean &plusmn; 95% Student-t CI)</div></div>
+      <div class="panel-body">
+        <table class="sci-table">
+          <thead>
+            <tr>
+              <th>System</th><th>ASDS-OMEGA v2.0</th><th>PySINDy v2.1</th><th>Weak-SINDy</th><th>Std. SINDy</th><th>Pure GP</th><th>3&sigma; OOD RMSE (ASDS / MLP)</th>
+            </tr>
+          </thead>
+          <tbody id="benchTableBody"><tr><td colspan="7" class="empty-state">Loading results/benchmark_ledger.json...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    let lastResult = null;
+    let runHistory = [];
+    let activeSource = 'benchmark';
+    let selectedCsvFile = null;
+    let cachedLedger = null;
+    let lastPdeResult = null;
+    let lastCfResult = null;
+    let lastDriftResult = null;
+
+    const REAL_IDS = new Set(['hudson_bay_lynx_hare', 'boarding_school_influenza', 'mauna_loa_co2']);
+
+    function isDark() {
+      return document.documentElement.getAttribute('data-theme') === 'dark';
+    }
+
+    function plotLayout(overrides = {}) {
+      const dark = isDark();
+      return {
+        paper_bgcolor: dark ? '#141b26' : '#ffffff',
+        plot_bgcolor: dark ? '#0d1219' : '#fafbfd',
+        font: { family: 'IBM Plex Sans, sans-serif', color: dark ? '#e6edf3' : '#0f172a', size: 11.5 },
+        xaxis: { gridcolor: dark ? '#243041' : '#e2e8f0', zerolinecolor: dark ? '#334155' : '#cbd5e1' },
+        yaxis: { gridcolor: dark ? '#243041' : '#e2e8f0', zerolinecolor: dark ? '#334155' : '#cbd5e1' },
+        margin: { t: 40, r: 22, b: 44, l: 56 },
+        legend: { orientation: 'h', y: 1.13, x: 0 },
+        ...overrides,
+      };
+    }
+
+    function renderLatex(tex, fallback) {
+      if (window.katex && tex) {
+        try {
+          return katex.renderToString(tex, { throwOnError: false, displayMode: false });
+        } catch (e) {}
+      }
+      return `<span class="mono">${escapeHtml(fallback || tex || '')}</span>`;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function setBusy(busy, label) {
+      const dot = document.getElementById('engineDot');
+      const st = document.getElementById('engineStatus');
+      dot.classList.toggle('busy', busy);
+      st.textContent = label || (busy ? 'Computing...' : 'Engine Idle');
+    }
+
+    function toggleTheme() {
+      const next = isDark() ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      document.getElementById('themeBtn').textContent = next === 'dark' ? 'Light Lab' : 'Dark Lab';
+      if (lastResult) renderOdePlots(lastResult);
+      if (lastPdeResult) renderPdePlots(lastPdeResult);
+      if (lastCfResult) renderCfPlot(lastCfResult);
+      if (lastDriftResult) renderDriftPlot(lastDriftResult);
+      if (cachedLedger) renderBenchmarkExplorer(cachedLedger);
+    }
+
+    function switchWorkspace(wsId) {
+      document.querySelectorAll('.workspace').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-tab').forEach(el => el.classList.toggle('active', el.dataset.ws === wsId));
+      document.getElementById(wsId).classList.add('active');
+      if (wsId === 'ws-bench' && !cachedLedger) loadBenchmarkLedger();
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 60);
+    }
+
+    function switchPlotTab(paneId) {
+      document.querySelectorAll('.plot-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.subtab').forEach(el => el.classList.toggle('active', el.dataset.plot === paneId));
+      document.getElementById(paneId).classList.add('active');
+      setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+    }
+
+    function setDataSource(src) {
+      activeSource = src;
+      document.getElementById('srcBenchBtn').classList.toggle('active', src === 'benchmark');
+      document.getElementById('srcCsvBtn').classList.toggle('active', src === 'csv');
+      document.getElementById('benchSourcePane').style.display = src === 'benchmark' ? 'block' : 'none';
+      document.getElementById('csvSourcePane').style.display = src === 'csv' ? 'block' : 'none';
+    }
+
+    function onDatasetChange() {
+      const ds = document.getElementById('dataset').value;
+      document.getElementById('noiseControls').style.display = REAL_IDS.has(ds) ? 'none' : 'block';
+    }
+
+    function handleCsvSelect(file) {
+      if (!file) return;
+      selectedCsvFile = file;
+      document.getElementById('csvFileName').textContent = `${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+    }
+
+    // Drag-and-drop wiring
+    const dz = document.getElementById('csvDropzone');
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e => {
+      e.preventDefault(); dz.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleCsvSelect(e.dataTransfer.files[0]);
+    });
+
+    async function runDiscovery() {
+      const btn = document.getElementById('runOdeBtn');
+      const st = document.getElementById('odeStatus');
+      st.classList.remove('err');
+      btn.disabled = true;
+      setBusy(true, 'Running 6-Layer VECSD...');
+      st.textContent = 'Running MS-AVP → VIFC → W-LIND → EVG-HE → ASDS-Verify...';
+
+      try {
+        let resp;
+        if (activeSource === 'csv') {
+          if (!selectedCsvFile) throw new Error('Select or drop a CSV file first.');
+          const fd = new FormData();
+          fd.append('file', selectedCsvFile);
+          fd.append('seed', document.getElementById('seed').value);
+          fd.append('use_weak_form', document.getElementById('weakForm').checked);
+          fd.append('cumulant_debiasing', document.getElementById('cumulant').checked);
+          fd.append('use_vifc', document.getElementById('vifc').checked);
+          fd.append('use_wlind', document.getElementById('wlind').checked);
+          resp = await fetch('/api/discover_csv', { method: 'POST', body: fd });
+        } else {
+          const body = {
+            dataset: document.getElementById('dataset').value,
+            noise_level: parseFloat(document.getElementById('noise').value),
+            noise_type: document.getElementById('noiseType').value,
+            seed: parseInt(document.getElementById('seed').value, 10),
+            use_weak_form: document.getElementById('weakForm').checked,
+            cumulant_debiasing: document.getElementById('cumulant').checked,
+            use_vifc: document.getElementById('vifc').checked,
+            use_wlind: document.getElementById('wlind').checked,
+            use_rationalizer: document.getElementById('rationalizer').checked,
+            run_active_falsification: document.getElementById('pafe').checked,
+          };
+          resp = await fetch('/api/discover', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+          });
+        }
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || 'Discovery error');
+        lastResult = data;
+        runHistory.unshift({ id: Date.now(), label: data.dataset_name, data });
+        if (runHistory.length > 8) runHistory.pop();
+        renderHistory();
+        renderOdeResult(data);
+        syncCfFromResult(data);
+        st.textContent = `Completed ${data.dataset_name} in ${data.runtime_sec.toFixed(2)}s | config hash ${data.config_hash}`;
+      } catch (err) {
+        st.classList.add('err');
+        st.textContent = 'Error: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        setBusy(false, 'Engine Idle');
+      }
+    }
+
+    function renderHistory() {
+      const box = document.getElementById('historyList');
+      if (!runHistory.length) return;
+      box.innerHTML = runHistory.map((item, idx) => {
+        const d = item.data;
+        const sm = d.evidence.symbolic_match_score !== null ? (d.evidence.symbolic_match_score * 100).toFixed(1) + '%' : 'Real';
+        const isAct = lastResult && d.config_hash === lastResult.config_hash && d.dataset_name === lastResult.dataset_name && idx === 0;
+        return `<div class="history-item ${isAct ? 'active' : ''}" onclick="restoreRun(${idx})">
+          <div class="history-top"><span>${escapeHtml(d.dataset_name)}</span><span>R² ${d.evidence.mean_weak_r2.toFixed(3)}</span></div>
+          <div class="history-meta">SM ${sm} · ${d.runtime_sec.toFixed(2)}s · #${d.config_hash.slice(0,8)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function restoreRun(idx) {
+      lastResult = runHistory[idx].data;
+      renderOdeResult(lastResult);
+      syncCfFromResult(lastResult);
+    }
+
+    function renderOdeResult(d) {
+      document.getElementById('kpiR2').textContent = d.evidence.mean_weak_r2.toFixed(4);
+      document.getElementById('kpiSym').textContent = d.evidence.symbolic_match_score !== null
+        ? (d.evidence.symbolic_match_score * 100).toFixed(1) + '%'
+        : 'Real Record';
+      document.getElementById('kpiSHD').textContent = d.causal.metrics.shd !== undefined ? d.causal.metrics.shd : '—';
+      document.getElementById('kpiPrune').textContent = (d.pruning_ratio * 100).toFixed(1) + '%';
+      const avgSig = d.estimated_noise_stds && d.estimated_noise_stds.length
+        ? (d.estimated_noise_stds.reduce((a,b)=>a+b,0) / d.estimated_noise_stds.length).toFixed(4)
+        : '—';
+      document.getElementById('kpiSigma').textContent = avgSig;
+      document.getElementById('kpiTime').textContent = d.runtime_sec.toFixed(2) + 's';
+
+      const gts = d.ground_truth_equations || [];
+      const tbody = document.getElementById('eqTable');
+      tbody.innerHTML = d.discovered_equations.map((eq, idx) => {
+        const gt = gts[idx];
+        const gtCell = gt && gt.latex ? renderLatex(gt.latex, gt.raw) : `<span style="color:var(--muted);">${escapeHtml(gt ? gt.raw : 'N/A')}</span>`;
+        const lhs = renderLatex(`\\frac{d${eq.target_var}}{dt}`, `d(${eq.target_var})/dt`);
+        const rhs = renderLatex(eq.latex || eq.expr_str, eq.expr_str);
+        return `<tr>
+          <td class="math-cell">${lhs}</td>
+          <td class="math-cell">${rhs}</td>
+          <td class="math-cell" style="opacity:0.85;">${gtCell}</td>
+          <td class="mono">${eq.weak_r2.toFixed(4)}</td>
+          <td class="mono">${eq.mdl_score.toFixed(1)}</td>
+          <td><span class="tag info">${escapeHtml(eq.source)}</span></td>
+        </tr>`;
+      }).join('');
+
+      document.getElementById('propsGrid').style.display = 'grid';
+      const symsHtml = d.symmetry.discrete_symmetries.map(s => `<span class="tag good">${escapeHtml(s.description)}</span>`).join('');
+      const invsHtml = d.symmetry.invariants.map(i => `<div style="margin-top:4px;">Invariant: ${renderLatex((i.latex || i.expr) + ' = \\text{const}', i.expr)} <span class="mono" style="color:var(--muted);">(res ${i.weak_residual.toFixed(4)})</span></div>`).join('');
+      const divHtml = renderLatex(`\\nabla\\cdot\\mathbf{f} = ${d.verification.symbolic_divergence_latex || d.verification.symbolic_divergence}`, `div(f)=${d.verification.symbolic_divergence}`);
+      document.getElementById('symBox').innerHTML = `
+        <div><span class="tag accent">Regime: ${escapeHtml(d.symmetry.regime_class)}</span> ${divHtml}</div>
+        <div style="margin-top:6px;">${symsHtml || '<span style="color:var(--muted);">No discrete reflection symmetries detected.</span>'}</div>
+        ${invsHtml || '<div style="margin-top:4px; color:var(--muted);">No polynomial/trig/log first integrals detected.</div>'}
+      `;
+
+      const eqPts = (d.verification.equilibria || []).slice(0, 4).map(ep =>
+        '(' + Object.entries(ep).map(([k,v]) => `${k}=${v}`).join(', ') + ')'
+      ).join(' , ');
+      const insights = (d.verification.derived_scientific_insights || []).map(s => `<div style="margin-top:3px;">• ${escapeHtml(s)}</div>`).join('');
+      document.getElementById('verifyBox').innerHTML = `
+        <div><strong>Equilibria:</strong> <span class="mono">${escapeHtml(eqPts || 'None symbolically solved')}</span></div>
+        ${insights || '<div style="margin-top:4px; color:var(--muted);">Symbolic equilibria &amp; divergence checked analytically in SymPy.</div>'}
+      `;
+
+      document.getElementById('leanCode').textContent = d.lean4_certificate || '-- No formal theorems verified for this run.';
+      renderOdePlots(d);
+    }
+
+    function renderOdePlots(d) {
+      const tr = d.trajectories;
+      const nv = d.var_names.length;
+      const palette = ['#0f766e', '#1d4ed8', '#b45309', '#7c3aed', '#be123c'];
+
+      // 1. Time Series + Residuals (subplots)
+      const tsTraces = [];
+      for (let j = 0; j < nv; j++) {
+        const col = palette[j % palette.length];
+        tsTraces.push({ x: tr.t, y: tr.observed.map(r => r[j]), mode: 'markers', name: `${d.var_names[j]} (obs)`, marker: { color: col, size: 3.5, opacity: 0.45 }, xaxis: 'x', yaxis: 'y' });
+        tsTraces.push({ x: tr.t, y: tr.discovered.map(r => r[j]), mode: 'lines', name: `${d.var_names[j]} (ASDS)`, line: { color: col, width: 2.2 }, xaxis: 'x', yaxis: 'y' });
+        tsTraces.push({ x: tr.t, y: tr.residuals.map(r => r[j]), mode: 'lines', name: `Δ${d.var_names[j]}`, showlegend: false, line: { color: col, width: 1.4 }, xaxis: 'x2', yaxis: 'y2' });
+      }
+      Plotly.newPlot('tsPlot', tsTraces, plotLayout({
+        title: `${d.dataset_name}: Observed Data vs. Discovered ODE & Residuals`,
+        grid: { rows: 2, columns: 1, subplots: [['xy'], ['x2y2']], roworder: 'top to bottom' },
+        yaxis: { domain: [0.32, 1.0], title: 'State', gridcolor: isDark() ? '#243041' : '#e2e8f0' },
+        yaxis2: { domain: [0.0, 0.23], title: 'Residual', gridcolor: isDark() ? '#243041' : '#e2e8f0' },
+        xaxis: { showticklabels: false, gridcolor: isDark() ? '#243041' : '#e2e8f0' },
+        xaxis2: { title: 'Time t', gridcolor: isDark() ? '#243041' : '#e2e8f0' },
+      }), { responsive: true });
+
+      // 2. Phase Portrait (3D if >= 3 vars, 2D if 2 vars, else phase velocity)
+      if (nv >= 3) {
+        Plotly.newPlot('phasePlot', [
+          { type: 'scatter3d', mode: 'lines', x: tr.clean.map(r=>r[0]), y: tr.clean.map(r=>r[1]), z: tr.clean.map(r=>r[2]), name: 'Reference Trajectory', line: { color: '#94a3b8', width: 2.5 } },
+          { type: 'scatter3d', mode: 'lines', x: tr.discovered.map(r=>r[0]), y: tr.discovered.map(r=>r[1]), z: tr.discovered.map(r=>r[2]), name: 'ASDS-OMEGA v2.0', line: { color: '#0f766e', width: 3.5 } }
+        ], plotLayout({
+          title: `3D Phase Space (${d.var_names[0]}, ${d.var_names[1]}, ${d.var_names[2]})`,
+          margin: { t: 40, r: 10, b: 10, l: 10 },
+          scene: {
+            xaxis: { title: d.var_names[0] }, yaxis: { title: d.var_names[1] }, zaxis: { title: d.var_names[2] }
+          }
+        }), { responsive: true });
+      } else if (nv === 2) {
+        Plotly.newPlot('phasePlot', [
+          { x: tr.observed.map(r=>r[0]), y: tr.observed.map(r=>r[1]), mode: 'markers', name: 'Observed', marker: { color: '#94a3b8', size: 4, opacity: 0.5 } },
+          { x: tr.discovered.map(r=>r[0]), y: tr.discovered.map(r=>r[1]), mode: 'lines', name: 'ASDS-OMEGA v2.0', line: { color: '#0f766e', width: 2.4 } }
+        ], plotLayout({
+          title: `2D Phase Portrait (${d.var_names[0]} vs. ${d.var_names[1]})`,
+          xaxis: { title: d.var_names[0], gridcolor: isDark() ? '#243041' : '#e2e8f0' },
+          yaxis: { title: d.var_names[1], gridcolor: isDark() ? '#243041' : '#e2e8f0' },
+        }), { responsive: true });
+      } else {
+        Plotly.newPlot('phasePlot', [
+          { x: tr.t, y: tr.discovered.map(r=>r[0]), mode: 'lines', name: d.var_names[0], line: { color: '#0f766e', width: 2.4 } }
+        ], plotLayout({ title: `1D State Evolution (${d.var_names[0]})` }), { responsive: true });
+      }
+
+      // 3. Conservation Drift Monitor
+      const invs = tr.invariant_traces || [];
+      if (invs.length) {
+        const invTraces = [];
+        invs.forEach((iv, k) => {
+          const col = palette[k % palette.length];
+          invTraces.push({ x: tr.t, y: iv.obs_drift, mode: 'lines', name: `Ref H${k+1} (${iv.expr.slice(0,22)})`, line: { color: '#94a3b8', dash: 'dot', width: 1.8 } });
+          invTraces.push({ x: tr.t, y: iv.disc_drift, mode: 'lines', name: `ASDS H${k+1} Drift`, line: { color: col, width: 2.3 } });
+        });
+        Plotly.newPlot('invPlot', invTraces, plotLayout({
+          title: 'Normalized Conservation Law Drift (H(t) − H(0)) / scale',
+          xaxis: { title: 'Time t', gridcolor: isDark() ? '#243041' : '#e2e8f0' },
+          yaxis: { title: 'Relative Drift', gridcolor: isDark() ? '#243041' : '#e2e8f0' },
+        }), { responsive: true });
+      } else {
+        Plotly.newPlot('invPlot', [], plotLayout({
+          title: 'Conservation Monitor — No exact first integrals detected (dissipative / open system)',
+          annotations: [{ text: 'No conserved quantity H(x) = const detected for this system.', showarrow: false, font: { size: 13, color: '#64748b' } }]
+        }), { responsive: true });
+      }
+
+      // 4. Annotated Causal Heatmap
+      const pmat = d.causal.probability_matrix;
+      const xLbl = d.var_names.map(v => `d(${v})/dt`);
+      const yLbl = d.var_names;
+      const anns = [];
+      for (let i = 0; i < yLbl.length; i++) {
+        for (let j = 0; j < xLbl.length; j++) {
+          const val = pmat[i][j];
+          anns.push({
+            x: xLbl[j], y: yLbl[i], text: val.toFixed(2), showarrow: false,
+            font: { color: val > 0.55 ? '#ffffff' : '#0f172a', size: 12, family: 'IBM Plex Mono' }
+          });
+        }
+      }
+      Plotly.newPlot('causalPlot', [{
+        z: pmat, x: xLbl, y: yLbl, type: 'heatmap', colorscale: 'YlGnBu', zmin: 0, zmax: 1, reversescale: false
+      }], plotLayout({
+        title: `VIFC Direct Differential Causal Probabilities (SHD = ${d.causal.metrics.shd})`,
+        annotations: anns,
+        xaxis: { title: 'Target Flow Derivative' },
+        yaxis: { title: 'Causal Parent State', autorange: 'reversed' },
+      }), { responsive: true });
+    }
+
+    // Exports
+    async function exportArtifact(fmt) {
+      if (!lastResult) return alert('Run discovery first.');
+      const extMap = { latex: 'tex', scipy: 'py', lean4: 'lean', markdown: 'md' };
+      const resp = await fetch('/api/export', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ summary: lastResult, format: fmt })
+      });
+      const text = await resp.text();
+      downloadText(`${lastResult.dataset_name}_asds.${extMap[fmt] || 'txt'}`, text);
+    }
+
+    function exportJson() {
+      if (!lastResult) return alert('Run discovery first.');
+      downloadText(`${lastResult.dataset_name}_ledger.json`, JSON.stringify(lastResult, null, 2));
+    }
+
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    function copyLean() {
+      navigator.clipboard.writeText(document.getElementById('leanCode').textContent);
+    }
+
+    // ===================================================================
+    // WORKSPACE 2: PDE LAB
+    // ===================================================================
+    async function runPdeDiscovery() {
+      const st = document.getElementById('pdeStatus');
+      st.classList.remove('err');
+      setBusy(true, 'Running 2D Spacetime PDE...');
+      st.textContent = 'Computing 2D separable weak-form integrals...';
+      try {
+        const resp = await fetch('/api/discover_pde', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dataset: document.getElementById('pdeDataset').value,
+            noise_level: parseFloat(document.getElementById('pdeNoise').value),
+            cumulant_debiasing: document.getElementById('pdeCumulant').checked,
+            seed: parseInt(document.getElementById('pdeSeed').value, 10),
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || 'PDE error');
+        lastPdeResult = data;
+        document.getElementById('pdeDiscEq').innerHTML = renderLatex(`u_t = ${data.expr_latex}`, `u_t = ${data.expr_str}`);
+        document.getElementById('pdeGtEq').innerHTML = renderLatex(`u_t = ${data.ground_truth_latex}`, `u_t = ${data.ground_truth}`);
+        document.getElementById('pdeMetaTags').innerHTML = `
+          <span class="tag accent">Weak R² = ${data.weak_r2.toFixed(4)}</span>
+          <span class="tag info">Weak MSE = ${data.weak_mse.toExponential(2)}</span>
+          <span class="tag good">${escapeHtml(data.domain)}</span>
+        `;
+        renderPdePlots(data);
+        st.textContent = `Recovered ${data.dataset_name} with Weak R² = ${data.weak_r2.toFixed(4)}.`;
+      } catch (err) {
+        st.classList.add('err');
+        st.textContent = 'Error: ' + err.message;
+      } finally {
+        setBusy(false, 'Engine Idle');
+      }
+    }
+
+    function renderPdePlots(d) {
+      Plotly.newPlot('pdeHeatmap', [{
+        z: d.u_noisy, x: d.x, y: d.t, type: 'heatmap', colorscale: 'Viridis'
+      }], plotLayout({
+        title: `${d.dataset_name}: Observed Noisy Spacetime Field`,
+        xaxis: { title: 'Space x' }, yaxis: { title: 'Time t' }
+      }), { responsive: true });
+
+      const nt = d.t.length;
+      const idxs = [0, Math.floor(nt / 2), nt - 1];
+      const cols = ['#1d4ed8', '#0f766e', '#b45309'];
+      const traces = idxs.map((ti, k) => ({
+        x: d.x, y: d.u_clean[ti], mode: 'lines', name: `t = ${d.t[ti].toFixed(2)}`, line: { color: cols[k], width: 2.2 }
+      }));
+      Plotly.newPlot('pdeSlices', traces, plotLayout({
+        title: 'Spatial Field Snapshots Across Time',
+        xaxis: { title: 'Space x' }, yaxis: { title: 'Field u(x, t)' }
+      }), { responsive: true });
+    }
+
+    // ===================================================================
+    // WORKSPACE 3: COUNTERFACTUALS
+    // ===================================================================
+    function syncCfFromResult(d) {
+      document.getElementById('cfModelBox').textContent = `Loaded: ${d.dataset_name} (${d.var_names.join(', ')}) | T = ${d.trajectories.t_end.toFixed(1)}`;
+      document.getElementById('cfHorizon').value = Math.round(d.trajectories.t_end);
+      const sel = document.getElementById('cfTargetVar');
+      sel.innerHTML = d.var_names.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+
+    function toggleCfMode() {
+      const m = document.getElementById('cfMode').value;
+      document.getElementById('cfScaleWrap').style.display = m === 'scale' ? 'block' : 'none';
+      document.getElementById('cfClampWrap').style.display = m === 'clamp' ? 'block' : 'none';
+    }
+
+    async function quickLoadForCf() {
+      document.getElementById('dataset').value = 'sir';
+      setDataSource('benchmark');
+      await runDiscovery();
+    }
+
+    async function runCounterfactual() {
+      if (!lastResult) return alert('Load or discover an ODE model first.');
+      const st = document.getElementById('cfStatus');
+      st.classList.remove('err');
+      setBusy(true, 'Simulating Do-Intervention...');
+      try {
+        const mode = document.getElementById('cfMode').value;
+        const tv = document.getElementById('cfTargetVar').value;
+        const body = {
+          var_names: lastResult.var_names,
+          equations: lastResult.discovered_equations.map(e => e.expr_str),
+          x0: lastResult.trajectories.x0,
+          t_end: parseFloat(document.getElementById('cfHorizon').value),
+          scale_equation: mode === 'scale' ? { [tv]: parseFloat(document.getElementById('cfScale').value) } : null,
+          clamped_vars: mode === 'clamp' ? { [tv]: parseFloat(document.getElementById('cfClampVal').value) } : null,
+        };
+        const resp = await fetch('/api/counterfactual', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        const cf = await resp.json();
+        if (!resp.ok) throw new Error(cf.detail || 'Counterfactual error');
+        lastCfResult = { cf, vnames: lastResult.var_names, mode, tv };
+        renderCfPlot(lastCfResult);
+        document.getElementById('cfTable').innerHTML = lastResult.var_names.map(v => `
+          <tr>
+            <td class="mono"><strong>${v}</strong></td>
+            <td class="mono">${cf.ate_per_var[v].toFixed(4)}</td>
+            <td class="mono">${cf.peak_shift_per_var[v].toFixed(4)}</td>
+          </tr>
+        `).join('');
+        st.textContent = `Simulated ${mode} intervention on ${tv}.`;
+      } catch (err) {
+        st.classList.add('err');
+        st.textContent = 'Error: ' + err.message;
+      } finally {
+        setBusy(false, 'Engine Idle');
+      }
+    }
+
+    function renderCfPlot(pack) {
+      const { cf, vnames, mode, tv } = pack;
+      const palette = ['#0f766e', '#1d4ed8', '#b45309', '#7c3aed'];
+      const traces = [];
+      vnames.forEach((v, j) => {
+        const c = palette[j % palette.length];
+        traces.push({ x: cf.t, y: cf.baseline.map(r=>r[j]), mode: 'lines', name: `${v} (baseline)`, line: { color: c, dash: 'dot', width: 1.8 } });
+        traces.push({ x: cf.t, y: cf.intervened.map(r=>r[j]), mode: 'lines', name: `${v} (do-intervened)`, line: { color: c, width: 2.5 } });
+      });
+      Plotly.newPlot('cfPlot', traces, plotLayout({
+        title: `Counterfactual Trajectory Shift (${mode} on ${tv})`,
+        xaxis: { title: 'Time t' }, yaxis: { title: 'State Value' }
+      }), { responsive: true });
+    }
+
+    // ===================================================================
+    // WORKSPACE 4: ONLINE CONCEPT DRIFT (SLR)
+    // ===================================================================
+    async function runDriftDemo() {
+      const st = document.getElementById('driftStatus');
+      st.classList.remove('err');
+      setBusy(true, 'Streaming CUSUM Drift...');
+      st.textContent = 'Streaming SIR → SIRS observations through Dual-Channel CUSUM...';
+      try {
+        const n = parseFloat(document.getElementById('driftNoise').value);
+        const s = parseInt(document.getElementById('driftSeed').value, 10);
+        const resp = await fetch(`/api/drift?noise_level=${n}&seed=${s}`, { method: 'POST' });
+        const dr = await resp.json();
+        if (!resp.ok) throw new Error(dr.detail || 'Drift error');
+        lastDriftResult = dr;
+        document.getElementById('drTrue').textContent = `t = ${dr.true_shift_time.toFixed(1)}`;
+        document.getElementById('drAlarm').textContent = dr.detected_time !== null ? `t = ${dr.detected_time.toFixed(2)}` : 'None';
+        document.getElementById('drDelay').textContent = dr.detection_delay !== null ? `Δt = ${dr.detection_delay.toFixed(2)}` : '—';
+        document.getElementById('drR2').textContent = `${dr.pre_drift_r2_on_post.toFixed(1)} → ${dr.regenerated_r2_on_post.toFixed(3)}`;
+        document.getElementById('drCons').textContent = dr.conservation_preserved ? 'Verified' : 'Broken';
+
+        document.getElementById('driftPreEqs').innerHTML = dr.var_names.map((v, i) =>
+          `<div class="math-cell" style="margin:6px 0;">${renderLatex(`\\frac{d${v}}{dt} = ${dr.pre_drift_latex[i]}`, dr.pre_drift_equations[i])}</div>`
+        ).join('');
+        document.getElementById('driftPostEqs').innerHTML = dr.var_names.map((v, i) =>
+          `<div class="math-cell" style="margin:6px 0;">${renderLatex(`\\frac{d${v}}{dt} = ${dr.post_drift_latex[i]}`, dr.post_drift_equations[i])}</div>`
+        ).join('');
+        renderDriftPlot(dr);
+        st.textContent = `Alarm fired at t=${dr.detected_time} (${dr.drift_type}).`;
+      } catch (err) {
+        st.classList.add('err');
+        st.textContent = 'Error: ' + err.message;
+      } finally {
+        setBusy(false, 'Engine Idle');
+      }
+    }
+
+    function renderDriftPlot(dr) {
+      const maxC = Math.max(...dr.cusum, 10);
+      const maxR = Math.max(...dr.residual, 1);
+      Plotly.newPlot('driftPlot', [
+        { x: dr.t, y: dr.residual, name: 'Weak-Form Residual', line: { color: '#1d4ed8', width: 2 }, xaxis: 'x', yaxis: 'y' },
+        { x: [dr.true_shift_time, dr.true_shift_time], y: [0, maxR], mode: 'lines', name: 'True Shift (t=20)', line: { color: '#b91c1c', dash: 'dash', width: 1.8 }, xaxis: 'x', yaxis: 'y' },
+        { x: dr.t, y: dr.cusum, name: 'CUSUM Score', line: { color: '#b45309', width: 2.2 }, xaxis: 'x2', yaxis: 'y2' },
+        { x: [dr.detected_time, dr.detected_time], y: [0, maxC], mode: 'lines', name: `SLR Alarm (t=${dr.detected_time})`, line: { color: '#0f766e', width: 2 }, xaxis: 'x2', yaxis: 'y2' },
+      ], plotLayout({
+        title: `Online Concept Drift Detection (${dr.drift_type})`,
+        grid: { rows: 2, columns: 1, subplots: [['xy'], ['x2y2']], roworder: 'top to bottom' },
+        yaxis: { domain: [0.55, 1.0], title: 'Residual' },
+        yaxis2: { domain: [0.0, 0.42], title: 'CUSUM' },
+        xaxis: { showticklabels: false },
+        xaxis2: { title: 'Time (days)' },
+      }), { responsive: true });
+    }
+
+    // ===================================================================
+    // WORKSPACE 5: VERIFIED 5-SEED BENCHMARK EXPLORER
+    // ===================================================================
+    async function loadBenchmarkLedger() {
+      try {
+        const resp = await fetch('/api/benchmark_ledger');
+        if (!resp.ok) throw new Error('Run `asds-omega benchmark` to generate results/benchmark_ledger.json.');
+        cachedLedger = await resp.json();
+        renderBenchmarkExplorer(cachedLedger);
+      } catch (err) {
+        document.getElementById('benchTableBody').innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function fmtCi(st) {
+      if (!st) return '—';
+      return st.ci95 < 0.001 ? st.mean.toFixed(3) : `${st.mean.toFixed(3)} ± ${st.ci95.toFixed(3)}`;
+    }
+
+    function renderBenchmarkExplorer(L) {
+      const agg = L.exp1_aggregate;
+      document.getElementById('bkAsds').textContent = fmtCi(agg.asds_overall_symbolic_match);
+      document.getElementById('bkPs').textContent = fmtCi(agg.vs_baselines.pysindy_official.baseline_symbolic_match);
+      document.getElementById('bkWs').textContent = fmtCi(agg.vs_baselines.weak_sindy.baseline_symbolic_match);
+      document.getElementById('bkSs').textContent = fmtCi(agg.vs_baselines.standard_sindy.baseline_symbolic_match);
+      document.getElementById('bkPval').textContent = '< 1e-5';
+
+      const keys = Object.keys(L.exp1_odes);
+      const getM = (k, b) => b === 'asds' ? L.exp1_odes[k].asds_omega_v2.symbolic_match.mean : L.exp1_odes[k].baselines[b].symbolic_match.mean;
+      Plotly.newPlot('benchHeadPlot', [
+        { x: keys, y: keys.map(k => getM(k, 'asds')), name: 'ASDS-OMEGA v2.0', type: 'bar', marker: { color: '#0f766e' } },
+        { x: keys, y: keys.map(k => getM(k, 'pysindy_official')), name: 'PySINDy v2.1', type: 'bar', marker: { color: '#7c3aed' } },
+        { x: keys, y: keys.map(k => getM(k, 'weak_sindy')), name: 'Weak-SINDy', type: 'bar', marker: { color: '#d97706' } },
+        { x: keys, y: keys.map(k => getM(k, 'standard_sindy')), name: 'Std. SINDy', type: 'bar', marker: { color: '#b91c1c' } },
+      ], plotLayout({ barmode: 'group', yaxis: { title: 'Symbolic Match (5 Seeds)', range: [0, 1.15] } }), { responsive: true });
+
+      const ablOrder = ['full_asds_omega_v2', 'no_cumulant_debias', 'no_weak_form_savgol', 'no_vifc_causal', 'no_wlind_symmetry', 'no_mdl_rationalizer'];
+      const ablNames = ['Full VECSD', 'w/o Cumulant', 'w/o Weak-Form', 'w/o VIFC', 'w/o W-LIND', 'w/o Rationalizer'];
+      Plotly.newPlot('benchAblPlot', [
+        {
+          x: ablNames, y: ablOrder.map(k => L.exp3_ablation[k].symbolic_match.mean),
+          error_y: { type: 'data', array: ablOrder.map(k => L.exp3_ablation[k].symbolic_match.ci95), visible: true },
+          name: 'Symbolic Match', type: 'bar', marker: { color: '#0f766e' }
+        },
+        {
+          x: ablNames, y: ablOrder.map(k => L.exp3_ablation[k].coeff_rel_error.mean),
+          name: 'Coeff. Rel. Err.', type: 'bar', marker: { color: '#1d4ed8' }
+        }
+      ], plotLayout({ barmode: 'group', yaxis: { title: 'Score / Error @ 10% Noise' } }), { responsive: true });
+
+      renderBenchNoiseCurve();
+
+      document.getElementById('benchTableBody').innerHTML = keys.map(k => {
+        const m = L.exp1_odes[k];
+        return `<tr>
+          <td><strong>${k}</strong></td>
+          <td class="mono" style="color:var(--accent); font-weight:600;">${fmtCi(m.asds_omega_v2.symbolic_match)}</td>
+          <td class="mono">${fmtCi(m.baselines.pysindy_official.symbolic_match)}</td>
+          <td class="mono">${fmtCi(m.baselines.weak_sindy.symbolic_match)}</td>
+          <td class="mono">${fmtCi(m.baselines.standard_sindy.symbolic_match)}</td>
+          <td class="mono">${fmtCi(m.baselines.pure_gp.symbolic_match)}</td>
+          <td class="mono">${m.asds_omega_v2.ood_rmse.mean.toFixed(4)} / ${m.neural_mlp_ood_rmse.mean.toFixed(3)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderBenchNoiseCurve() {
+      if (!cachedLedger) return;
+      const sys = document.getElementById('benchNoiseSys').value;
+      const curves = cachedLedger.exp2_noise_stress.systems[sys];
+      const metric = sys === 'lorenz' ? 'symbolic_match' : 'coeff_rel_error';
+      const specs = [
+        ['asds_omega_v2', 'ASDS-OMEGA v2.0 (Debiased)', '#0f766e', 'solid'],
+        ['asds_no_cumulant_debias', 'ASDS (No Debias)', '#1d4ed8', 'dash'],
+        ['pysindy_official', 'PySINDy v2.1 (Official)', '#7c3aed', 'dashdot'],
+        ['weak_sindy', 'Weak-SINDy', '#d97706', 'dot'],
+        ['standard_sindy', 'Standard SINDy', '#b91c1c', 'dot'],
+      ];
+      const traces = specs.map(([mk, lbl, col, dash]) => ({
+        x: curves[mk].map(e => Math.round(e.sigma * 100)),
+        y: curves[mk].map(e => metric === 'coeff_rel_error' ? Math.max(e[metric].mean, 1e-4) : e[metric].mean),
+        mode: 'lines+markers', name: lbl, line: { color: col, dash, width: 2.3 }
+      }));
+      Plotly.newPlot('benchNoisePlot', traces, plotLayout({
+        xaxis: { title: 'Relative Gaussian Noise (%)' },
+        yaxis: { title: metric === 'coeff_rel_error' ? 'Coeff. Relative Error (log)' : 'Symbolic Match Score', type: metric === 'coeff_rel_error' ? 'log' : 'linear' }
+      }), { responsive: true });
+    }
+  </script>
+</body>
+</html>

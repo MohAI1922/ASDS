@@ -1,0 +1,44 @@
+name: Deploy GitHub Pages Scientific Portal
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble static portal with verified ledger, PDFs, figures, and Lean 4 certificates
+        run: |
+          mkdir -p _site/data _site/papers _site/figures _site/lean4
+          cp docs/index.html _site/index.html
+          cp results/benchmark_ledger.json _site/data/benchmark_ledger.json
+          cp results/figures/*.png _site/figures/
+          cp results/lean4/*.lean _site/lean4/
+          cp paper/main.pdf _site/papers/main.pdf
+          cp paper/main_accessible.pdf _site/papers/main_accessible.pdf
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: "_site"
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

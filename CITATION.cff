@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+title: "ASDS-OMEGA v2.0: Variational Equivariant Causal-Symbolic Discovery (VECSD)"
+message: "If you use this software or the VECSD framework in your research, please cite it as below."
+type: software
+version: 2.0.0
+date-released: 2026-11-23
+license: MIT
+authors:
+  - family-names: Elsayed
+    given-names: Muhammad Mahmoud Muhammad
+    orcid: "https://orcid.org/0009-0007-6858-7388"
+    affiliation: "Asyut STEM School, Egypt"
+repository-code: "https://github.com/MohAI1922/ASDS"
+url: "https://mohai1922.github.io/ASDS/"
+keywords:
+  - symbolic regression
+  - weak-form discovery
+  - errors-in-variables debiasing
+  - dynamical causal discovery
+  - Lie symmetries
+  - conservation laws
+  - active falsification
+  - formal verification
+  - Lean 4
+abstract: >-
+  ASDS-OMEGA v2.0 introduces Variational Equivariant Causal-Symbolic Discovery (VECSD),
+  a unified operator-theoretic framework integrating Multi-Scale Adaptive Variational
+  Projection with Hermite Cumulant Errors-in-Variables debiasing (MS-AVP), Variational
+  Interventional Flow Causality with Manifold-Aware Faithfulness Guards (VIFC), Model-Free
+  Weak-Form Lie-Noether and Foliation Discovery with Reynolds equivariant projection
+  (W-LIND), Equivariant Variational Grammar-Guided Hybrid Evolution (EVG-HE), Popperian
+  Active Falsification (PAFE), Online Surgical Structural Regeneration (SLR), and
+  SymPy/Lean 4 formal theorem certification.

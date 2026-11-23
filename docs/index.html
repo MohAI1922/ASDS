@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASDS-OMEGA v2.0 (VECSD) — Autonomous Scientific Law Discovery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" onload="renderAllMath()"></script>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f9; --surface: #ffffff; --subtle: #f8fafc; --border: #d8e0ea;
+      --ink: #0f172a; --ink2: #334155; --muted: #64748b;
+      --primary: #1d3557; --accent: #0f766e; --accent-soft: #e6f4f1;
+      --info-soft: #eff6ff; --info: #1d4ed8;
+      --mono: 'IBM Plex Mono', ui-monospace, monospace;
+      --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    }
+    [data-theme="dark"] {
+      --bg: #0d1219; --surface: #141b26; --subtle: #101620; --border: #243041;
+      --ink: #e6edf3; --ink2: #cbd5e1; --muted: #8b9bb0;
+      --primary: #2563eb; --accent: #2dd4bf; --accent-soft: rgba(45,212,191,0.12);
+      --info-soft: rgba(96,165,250,0.12); --info: #60a5fa;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.55; font-variant-numeric: tabular-nums; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40; }
+    .nav-wrap { max-width: 1180px; margin: 0 auto; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; }
+    .mark { width: 28px; height: 28px; border-radius: 5px; background: var(--primary); color: #fff; display: grid; place-items: center; font-family: var(--mono); font-size: 12px; }
+    .nav-links { display: flex; gap: 16px; align-items: center; font-size: 13px; }
+    .nav-links a { color: var(--ink2); text-decoration: none; font-weight: 500; }
+    .nav-links a:hover { color: var(--accent); }
+    .theme-btn { background: var(--subtle); border: 1px solid var(--border); color: var(--ink2); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-family: var(--sans); font-size: 12px; }
+
+    .container { max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px; }
+    .hero { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 30px 32px; margin-bottom: 22px; }
+    .eyebrow { font-family: var(--mono); font-size: 11.5px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; }
+    .hero h1 { margin: 8px 0 10px; font-size: 27px; line-height: 1.25; letter-spacing: -0.3px; }
+    .hero p { margin: 0; color: var(--ink2); max-width: 880px; font-size: 14.5px; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 5px; font-size: 13px; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--surface); color: var(--ink); }
+    .btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn:hover { opacity: 0.92; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 22px; }
+    .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; }
+    .kpi-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 600; }
+    .kpi-val { font-family: var(--mono); font-size: 19px; font-weight: 600; margin-top: 4px; color: var(--ink); }
+    .kpi-val.accent { color: var(--accent); }
+
+    h2 { font-size: 18px; margin: 28px 0 12px; letter-spacing: -0.2px; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 18px 20px; margin-bottom: 18px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .layer-card { background: var(--subtle); border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
+    .layer-num { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; }
+    .layer-title { font-weight: 700; font-size: 14px; margin: 4px 0 6px; }
+    .layer-desc { font-size: 12.5px; color: var(--ink2); margin: 0; }
+    .math-pill { margin-top: 8px; padding: 6px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; font-size: 12.5px; overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
+    th { text-align: left; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); border-bottom: 1.5px solid var(--border); background: var(--subtle); }
+    td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .mono { font-family: var(--mono); font-size: 12px; }
+    pre { background: var(--subtle); border: 1px solid var(--border); border-radius: 6px; padding: 14px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; margin: 0; }
+    select { background: var(--subtle); color: var(--ink); border: 1px solid var(--border); border-radius: 5px; padding: 6px 10px; font-family: var(--sans); font-size: 12.5px; }
+    footer { text-align: center; padding: 22px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); }
+    @media (max-width: 960px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav-wrap">
+      <div class="brand"><div class="mark">Ω2</div> ASDS-OMEGA v2.0 <span style="font-weight:400; color:var(--muted); font-size:12.5px;">(VECSD)</span></div>
+      <nav class="nav-links">
+        <a href="#architecture">Architecture</a>
+        <a href="#benchmarks">5-Seed Results</a>
+        <a href="#papers">Papers &amp; Proofs</a>
+        <a href="#quickstart">Install &amp; GUI</a>
+        <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">Dark Lab</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow">Open-Source Scientific Discovery Framework &middot; MIT License &middot; Python 3.11+</div>
+      <h1>Variational Equivariant Causal-Symbolic Discovery (VECSD)</h1>
+      <p>
+        <strong>ASDS-OMEGA v2.0</strong> autonomously infers interpretable governing differential equations (ODEs &amp; 1+1D PDEs),
+        direct differential causal graphs, discrete/continuous symmetries, exact conservation laws, and
+        <code>sorry</code>-free <strong>Lean 4</strong> theorem certificates directly from noisy experimental trajectories.
+      </p>
+      <div class="cta-row">
+        <a class="btn primary" href="https://github.com/MohAI1922/ASDS" target="_blank">GitHub Repository</a>
+        <a class="btn accent" href="papers/main.pdf" target="_blank">Technical Paper (PDF)</a>
+        <a class="btn" href="papers/main_accessible.pdf" target="_blank">Accessible Edition (PDF)</a>
+        <a class="btn" href="#benchmarks">5-Seed Benchmarks</a>
+        <a class="btn" href="#quickstart">Install &amp; Desktop GUI</a>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      <div class="kpi"><div class="kpi-lbl">ASDS-OMEGA v2.0 (N=40)</div><div class="kpi-val accent" id="kAsds">0.997 ± 0.002</div></div>
+      <div class="kpi"><div class="kpi-lbl">PySINDy v2.1 (Official)</div><div class="kpi-val" id="kPs">0.727 ± 0.105</div></div>
+      <div class="kpi"><div class="kpi-lbl">Weak-SINDy (Std.)</div><div class="kpi-val" id="kWs">0.872 ± 0.080</div></div>
+      <div class="kpi"><div class="kpi-lbl">Wilcoxon p (vs. All)</div><div class="kpi-val accent">&lt; 10⁻⁵</div></div>
+      <div class="kpi"><div class="kpi-lbl">Lean 4 Certificates</div><div class="kpi-val">8 (0 sorry)</div></div>
+    </section>
+
+    <h2 id="architecture">Six-Layer Variational Architecture</h2>
+    <section class="grid-3">
+      <div class="layer-card">
+        <div class="layer-num">Layer 1 &middot; MS-AVP</div>
+        <div class="layer-title">Adaptive Weak Form &amp; Hermite EIV</div>
+        <p class="layer-desc">Wavelet-MAD noise estimation, curvature-optimal C⁴ bump windows, and exact Hermite/Wick variance debiasing for ODEs &amp; 2D PDEs.</p>
+        <div class="math-pill" data-tex="\mathbb{E}[H_m(\tilde{x};\sigma^2)] = x^m"></div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">Layer 2 &middot; VIFC</div>
+        <div class="layer-title">Differential Causality + Faithfulness Guard</div>
+        <p class="layer-desc">State-to-rate graph via WF-cHSIC block knockoffs, partial CCM, and RBF Dyn-ICP—immune to cyclic feedback and conservation collinearity.</p>
+        <div class="math-pill" data-tex="x_j(t) \to \dot{x}_i(t),\;\; R^2(x_j \sim \mathcal{S}) < 1-\tau"></div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">Layer 3 &middot; W-LIND</div>
+        <div class="layer-title">Model-Free Conservation &amp; Reynolds</div>
+        <p class="layer-desc">Recovers invariants before knowing f(x) via zero-derivative linear nullspace with Univariate Exclusion and Reynolds equivariant pruning.</p>
+        <div class="math-pill" data-tex="\langle \dot{\phi}_k, \psi(\mathbf{x})\rangle \mathbf{c} = \mathbf{0},\;\; \mathcal{P}_{\mathcal{G}}[\mathbf{f}]"></div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">Layer 4 &middot; EVG-HE</div>
+        <div class="layer-title">Equivariant Hybrid Symbolic Evolution</div>
+        <p class="layer-desc">Tiered sparse projection + KKT conservation, TLS-SVD implicit weak rational solver, residual-guided GP+VarPro, and K_eff-MDL snapping.</p>
+        <div class="math-pill" data-tex="\langle \phi_k, S\dot{S}\rangle = -\tfrac{1}{2}\langle \dot{\phi}_k, H_2(\tilde{S};\hat{\sigma}^2)\rangle"></div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">Layer 5 &middot; PAFE &amp; SLR</div>
+        <div class="layer-title">Active Falsification &amp; Drift Regeneration</div>
+        <p class="layer-desc">Selects maximally discriminating experimental initial conditions and detects online SIR→SIRS regime shifts via Dual-Channel CUSUM.</p>
+        <div class="math-pill" data-tex="g_t = \max(0,\, g_{t-1} + r_t - \mu_0 - \delta)"></div>
+      </div>
+      <div class="layer-card">
+        <div class="layer-num">Layer 6 &middot; ASDS-Verify</div>
+        <div class="layer-title">SymPy &amp; Lean 4 Formal Certification</div>
+        <p class="layer-desc">Analytically verifies conservation, equivariance, equilibria, and divergence, exporting sorry-free Lean 4 proof certificates.</p>
+        <div class="math-pill" data-tex="\nabla H \cdot \hat{\mathbf{f}} \equiv 0,\;\; g\cdot\hat{\mathbf{f}}(\mathbf{x}) = \hat{\mathbf{f}}(g\cdot\mathbf{x})"></div>
+      </div>
+    </section>
+
+    <h2 id="benchmarks">Interactive Verified 5-Seed Benchmark Explorer</h2>
+    <div class="grid-2">
+      <div class="panel">
+        <div style="font-weight:700; margin-bottom:8px;">Exp 1: Multi-Domain Head-to-Head (8 ODEs @ 5% Noise, n=5 Seeds)</div>
+        <div id="plotHead" style="height:340px;"></div>
+      </div>
+      <div class="panel">
+        <div style="font-weight:700; margin-bottom:8px;">Exp 3: 6-Factor Ablation (5 Systems &times; 5 Seeds @ 10% Noise)</div>
+        <div id="plotAbl" style="height:340px;"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+        <strong>Exp 2: High-Noise Stress Test &amp; Hermite Cumulant EIV Isolation (0%–30% Noise)</strong>
+        <select id="noiseSys" onchange="renderNoise()">
+          <option value="van_der_pol">Van der Pol (Cubic -x²y EIV)</option>
+          <option value="duffing">Duffing Double-Well (Cubic -x³ EIV)</option>
+          <option value="lorenz">Lorenz-63 Chaotic Attractor</option>
+        </select>
+      </div>
+      <div id="plotNoise" style="height:330px;"></div>
+    </div>
+
+    <div class="panel">
+      <div style="font-weight:700; margin-bottom:10px;">Verified Multi-Seed Summary Table (Mean &plusmn; 95% Student-t CI)</div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>System</th><th>ASDS-OMEGA v2.0</th><th>PySINDy v2.1</th><th>Weak-SINDy</th><th>Std. SINDy</th><th>Pure GP</th><th>3&sigma; OOD RMSE (ASDS / MLP)</th></tr>
+          </thead>
+          <tbody id="tblBody"><tr><td colspan="7" style="color:var(--muted);">Loading verified benchmark_ledger.json...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h2 id="papers">Manuscripts, JOSS Submission &amp; Formal Lean 4 Certificates</h2>
+    <div class="grid-2">
+      <div class="panel">
+        <strong>Scientific Manuscripts</strong>
+        <ul style="padding-left:18px; margin:10px 0 0;">
+          <li><a href="papers/main.pdf" target="_blank">Full Technical Manuscript (PDF, 10 pp.)</a> — Formal proofs of Theorems 1–3, auto-generated tables, and 300-DPI figures.</li>
+          <li><a href="papers/main_accessible.pdf" target="_blank">Accessible Edition (PDF, 17 pp.)</a> — High-school / intro-calculus derivations with 5 step-by-step worked numerical examples.</li>
+          <li><a href="data/benchmark_ledger.json" target="_blank">Raw Verified 5-Seed JSON Ledger</a> — Complete reproducible metrics for every trial.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <strong>Formal Lean 4 Certificates (sorry-free)</strong>
+        <ul style="padding-left:18px; margin:10px 0 0; font-family:var(--mono); font-size:12.5px;">
+          <li><a href="lean4/lorenz_certificate.lean" target="_blank">lorenz_certificate.lean</a> (Z2 equivariance, div = -41/3)</li>
+          <li><a href="lean4/kepler_certificate.lean" target="_blank">kepler_certificate.lean</a> (Angular momentum L + 12 Z2 theorems)</li>
+          <li><a href="lean4/sir_certificate.lean" target="_blank">sir_certificate.lean</a> (Mass conservation S+I+R)</li>
+          <li><a href="lean4/pendulum_certificate.lean" target="_blank">pendulum_certificate.lean</a> (Hamiltonian energy + Z2)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 id="quickstart">Quick Start: Python SDK, CLI &amp; Standalone Desktop GUI</h2>
+    <div class="panel">
+      <pre><code># 1. Clone &amp; install (Python 3.11+)
+git clone https://github.com/MohAI1922/ASDS.git
+cd ASDS
+pip install -e ".[dev,benchmarks]"
+
+# 2. Launch standalone native Desktop GUI Workbench (KaTeX + 2D/3D Plotly + CSV + PDE + Lean 4)
+asds-omega gui
+
+# 3. Or run headless browser server / CLI discovery / 5-seed benchmarks
+asds-omega serve --host 127.0.0.1 --port 8000
+asds-omega discover --dataset lorenz --noise 0.05 --seed 42
+asds-omega benchmark --seed 42 --n-seeds 5 --out results</code></pre>
+    </div>
+  </main>
+
+  <footer>
+    ASDS-OMEGA v2.0 (VECSD) &middot; Released under the MIT License &middot; Reproducible Open Scientific Software
+  </footer>
+
+  <script>
+    let L = null;
+    function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+    function toggleTheme() {
+      const n = isDark() ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', n);
+      document.getElementById('themeBtn').textContent = n === 'dark' ? 'Light Lab' : 'Dark Lab';
+      if (L) renderAllCharts();
+    }
+    function renderAllMath() {
+      if (!window.katex) return;
+      document.querySelectorAll('[data-tex]').forEach(el => {
+        katex.render(el.getAttribute('data-tex'), el, { throwOnError: false });
+      });
+    }
+    function pLay(ov = {}) {
+      const d = isDark();
+      return {
+        paper_bgcolor: d ? '#141b26' : '#ffffff', plot_bgcolor: d ? '#0d1219' : '#fafbfd',
+        font: { family: 'IBM Plex Sans, sans-serif', color: d ? '#e6edf3' : '#0f172a', size: 11.5 },
+        xaxis: { gridcolor: d ? '#243041' : '#e2e8f0' }, yaxis: { gridcolor: d ? '#243041' : '#e2e8f0' },
+        margin: { t: 28, r: 16, b: 44, l: 54 }, legend: { orientation: 'h', y: 1.15, x: 0 }, ...ov
+      };
+    }
+    function fmtCi(s) { return s.ci95 < 0.001 ? s.mean.toFixed(3) : `${s.mean.toFixed(3)} ± ${s.ci95.toFixed(3)}`; }
+
+    async function init() {
+      try {
+        const r = await fetch('data/benchmark_ledger.json');
+        if (!r.ok) return;
+        const raw = await r.json();
+        const exp1 = raw.experiments.exp1_multidomain_5pct;
+        L = {
+          odes: Object.fromEntries(Object.entries(exp1.odes).map(([k,v]) => [k, v.multiseed])),
+          agg: exp1.aggregate_significance,
+          exp2: raw.experiments.exp2_noise_stress,
+          exp3: raw.experiments.exp3_ablation_10pct,
+        };
+        document.getElementById('kAsds').textContent = fmtCi(L.agg.asds_overall_symbolic_match);
+        document.getElementById('kPs').textContent = fmtCi(L.agg.vs_baselines.pysindy_official.baseline_symbolic_match);
+        document.getElementById('kWs').textContent = fmtCi(L.agg.vs_baselines.weak_sindy.baseline_symbolic_match);
+        renderAllCharts();
+      } catch (e) {}
+    }
+
+    function renderAllCharts() {
+      const keys = Object.keys(L.odes);
+      const gm = (k, b) => b === 'asds' ? L.odes[k].asds_omega_v2.symbolic_match.mean : L.odes[k].baselines[b].symbolic_match.mean;
+      Plotly.newPlot('plotHead', [
+        { x: keys, y: keys.map(k=>gm(k,'asds')), name: 'ASDS-OMEGA v2.0', type: 'bar', marker: { color: '#0f766e' } },
+        { x: keys, y: keys.map(k=>gm(k,'pysindy_official')), name: 'PySINDy v2.1', type: 'bar', marker: { color: '#7c3aed' } },
+        { x: keys, y: keys.map(k=>gm(k,'weak_sindy')), name: 'Weak-SINDy', type: 'bar', marker: { color: '#d97706' } },
+        { x: keys, y: keys.map(k=>gm(k,'standard_sindy')), name: 'Std. SINDy', type: 'bar', marker: { color: '#b91c1c' } },
+      ], pLay({ barmode: 'group', yaxis: { title: 'Symbolic Match', range: [0, 1.15] } }), { responsive: true });
+
+      const ao = ['full_asds_omega_v2','no_cumulant_debias','no_weak_form_savgol','no_vifc_causal','no_wlind_symmetry','no_mdl_rationalizer'];
+      const an = ['Full VECSD','w/o Cumulant','w/o Weak-Form','w/o VIFC','w/o W-LIND','w/o Rationalizer'];
+      Plotly.newPlot('plotAbl', [
+        { x: an, y: ao.map(k=>L.exp3[k].symbolic_match.mean), error_y: { type: 'data', array: ao.map(k=>L.exp3[k].symbolic_match.ci95), visible: true }, name: 'Symbolic Match', type: 'bar', marker: { color: '#0f766e' } },
+        { x: an, y: ao.map(k=>L.exp3[k].coeff_rel_error.mean), name: 'Coeff. Rel. Err.', type: 'bar', marker: { color: '#1d4ed8' } },
+      ], pLay({ barmode: 'group', yaxis: { title: 'Score / Error @ 10% Noise' } }), { responsive: true });
+
+      renderNoise();
+
+      document.getElementById('tblBody').innerHTML = keys.map(k => {
+        const m = L.odes[k];
+        return `<tr>
+          <td><strong>${k}</strong></td>
+          <td class="mono" style="color:var(--accent); font-weight:600;">${fmtCi(m.asds_omega_v2.symbolic_match)}</td>
+          <td class="mono">${fmtCi(m.baselines.pysindy_official.symbolic_match)}</td>
+          <td class="mono">${fmtCi(m.baselines.weak_sindy.symbolic_match)}</td>
+          <td class="mono">${fmtCi(m.baselines.standard_sindy.symbolic_match)}</td>
+          <td class="mono">${fmtCi(m.baselines.pure_gp.symbolic_match)}</td>
+          <td class="mono">${m.asds_omega_v2.ood_rmse.mean.toFixed(4)} / ${m.neural_mlp_ood_rmse.mean.toFixed(3)}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderNoise() {
+      if (!L) return;
+      const sys = document.getElementById('noiseSys').value;
+      const curves = L.exp2.systems[sys];
+      const metric = sys === 'lorenz' ? 'symbolic_match' : 'coeff_rel_error';
+      const specs = [
+        ['asds_omega_v2','ASDS-OMEGA v2.0 (Debiased)','#0f766e','solid'],
+        ['asds_no_cumulant_debias','ASDS (No Debias)','#1d4ed8','dash'],
+        ['pysindy_official','PySINDy v2.1 (Official)','#7c3aed','dashdot'],
+        ['weak_sindy','Weak-SINDy','#d97706','dot'],
+        ['standard_sindy','Std. SINDy','#b91c1c','dot'],
+      ];
+      Plotly.newPlot('plotNoise', specs.map(([mk,lbl,col,dash]) => ({
+        x: curves[mk].map(e=>Math.round(e.sigma*100)),
+        y: curves[mk].map(e=>metric==='coeff_rel_error'?Math.max(e[metric].mean,1e-4):e[metric].mean),
+        mode: 'lines+markers', name: lbl, line: { color: col, dash, width: 2.3 }
+      })), pLay({
+        xaxis: { title: 'Relative Gaussian Noise (%)' },
+        yaxis: { title: metric==='coeff_rel_error' ? 'Coeff. Relative Error (log)' : 'Symbolic Match', type: metric==='coeff_rel_error' ? 'log' : 'linear' }
+      }), { responsive: true });
+    }
+    init();
+  </script>
+</body>
+</html>
