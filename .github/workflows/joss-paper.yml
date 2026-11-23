@@ -7,6 +7,7 @@ on:
       - 'paper.md'
       - 'paper.bib'
       - 'results/figures/**'
+      - '.github/workflows/joss-paper.yml'
   pull_request:
     paths:
       - 'paper.md'
@@ -18,12 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Compile JOSS paper.md with official openjournals/inara
-        uses: openjournals/inara@v0.1.3
-        with:
-          paper-path: paper.md
-          journal: joss
-          output-format: pdf
+      - name: Compile JOSS paper.md with official openjournals/inara Docker image
+        run: |
+          docker run --rm \
+            --volume "$PWD:/data" \
+            --user "$(id -u):$(id -g)" \
+            --env JOURNAL=joss \
+            openjournals/inara:latest -o pdf paper.md
+          ls -lh paper.pdf
       - name: Upload compiled JOSS paper.pdf artifact
         uses: actions/upload-artifact@v4
         with:
