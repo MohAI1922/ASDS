@@ -1,9 +1,10 @@
 \documentclass[10pt]{article} % For LaTeX2e
 \usepackage{tmlr}
-% To de-anonymize for camera-ready or arXiv preprint, use:
+% For camera-ready or arXiv preprint, use:
 % \usepackage[accepted]{tmlr} or \usepackage[preprint]{tmlr}
 
 \usepackage{amsmath,amssymb,amsthm}
+\usepackage{array}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{hyperref}
@@ -17,15 +18,22 @@
   urlcolor=teal!80!black
 }
 
+\setlength{\emergencystretch}{2em}
+\renewcommand{\topfraction}{0.90}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.75}
+
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
 \newtheorem{remark}{Remark}
 
-\title{Variational Equivariant Causal-Symbolic Discovery (VECSD):\\A Unified Operator-Theoretic Framework for Autonomous Scientific Law Discovery}
+\title{Variational Equivariant Causal-Symbolic Discovery:\\
+An Operator-Theoretic Framework for Autonomous Law Discovery}
 
-\author{\name Muhammad Mahmoud Muhammad Elsayed \email anonymous@openreview.net \\
-      \addr Asyut STEM School, Egypt}
+\author{\name Anonymous Author(s) \email anonymous@openreview.net \\
+      \addr Anonymous Institution}
 
 \newcommand{\fix}{\marginpar{FIX}}
 \newcommand{\new}{\marginpar{NEW}}
@@ -39,40 +47,81 @@
 \maketitle
 
 \begin{abstract}
-Automating the discovery of interpretable governing differential equations from noisy, multi-regime experimental trajectories remains a central challenge in scientific machine learning. Existing paradigms operate in isolation and break down under realistic scientific conditions: sparse regression methods (SINDy, Weak-SINDy) suffer from errors-in-variables (EIV) bias on nonlinear self-power terms and rank collapse on conservation manifolds; evolutionary symbolic regressors waste search capacity on causally and physically invalid expressions; static causal learners (PC, NOTEARS) collapse on cyclic continuous-time feedback loops; and symmetry detectors require knowing the governing equations beforehand. We introduce \textbf{Variational Equivariant Causal-Symbolic Discovery (VECSD)}, implemented in the open-source framework \textbf{ASDS-OMEGA v2.0}, which unifies six discovery stages inside a shared variational operator-theoretic substrate: (1) \textbf{MS-AVP}, multi-scale adaptive weak-form projection with shrinkage-regularized Hermite cumulant EIV debiasing and Buckingham~$\Pi$ dimensional analysis; (2) \textbf{VIFC}, direct differential causal discovery $x_j(t)\to\dot{x}_i(t)$ combining weak-form conditional HSIC knockoffs, a Manifold-Aware Faithfulness Guard, partial CCM, and universal RBF dynamical ICP; (3) \textbf{W-LIND}, model-free zero-derivative conservation discovery ($\langle\dot{\phi}_k,\psi(x)\rangle c = 0$), discrete/continuous Lie symmetry identification, and exact Reynolds equivariant projection $\mathcal{P}_{\mathcal{G}}$ prior to search; (4) \textbf{EVG-HE}, causal- and Reynolds-pruned tiered sparse projection, Total-Least-Squares implicit weak-form rational discovery, semantic residual-guided weak-form NSGA-II genetic programming with variable projection, and effective-sample-size ($K_{\text{eff}}$) MDL rationalization; (5) \textbf{PAFE \& SLR}, Popperian active experimental falsification and dual-channel CUSUM online surgical drift regeneration; and (6) automated \textbf{SymPy + Lean~4} formal theorem certification. Across 8 core ODEs, 8D Lorenz-96, 2 spatiotemporal PDEs, and 3 real-world experimental records, VECSD achieves \textbf{0.997 $\pm$ 0.002} symbolic match across $N=40$ multi-seed trials, significantly outperforming official PySINDy~v2.1 ($0.727$), Weak-SINDy ($0.872$), standard SINDy ($0.854$), Pure GP ($0.595$), and black-box Neural MLPs ($p < 10^{-5}$).
+Automating the discovery of governing differential equations from noisy, multi-regime trajectories remains fragile when existing tools operate in isolation: weak-form sparse regression suffers errors-in-variables (EIV) bias on nonlinear self-powers and rank collapse on conservation manifolds; static causal learners fail on cyclic feedback loops; symmetry detectors presuppose known equations; and overlapping integral windows induce minimum-description-length (MDL) overfitting. We introduce \textbf{Variational Equivariant Causal-Symbolic Discovery (VECSD)}, a unified six-layer framework sharing one variational integral substrate. VECSD combines: (i) multi-scale adaptive weak projection with shrinkage-regularized Hermite cumulant EIV debiasing; (ii) direct state-to-rate causal inference guarded against conservation-manifold collinearity; (iii) model-free zero-derivative conservation recovery and exact Reynolds equivariant term pruning prior to search; (iv) hybrid tiered sparse regression, implicit weak rational discovery, variable-projection genetic programming, and effective-sample-size ($K_{\text{eff}}$) MDL rationalization; (v) active experimental falsification and online CUSUM drift regeneration; and (vi) automated SymPy and \texttt{sorry}-free Lean~4 certification. Across 8 core ODEs ($N=40$ trials, $5\%$ noise), 8D Lorenz-96, 2 PDEs, and 3 real-world records, VECSD achieves \textbf{0.997 $\pm$ 0.002} symbolic match, significantly outperforming official PySINDy~v2.1 ($0.727$), Weak-SINDy ($0.872$), standard SINDy ($0.854$), Pure GP ($0.595$), and Neural MLPs ($p < 10^{-5}$).
 \end{abstract}
 
 %======================================================================
 \section{Introduction}
 %======================================================================
-Scientific theories advance through compact, mechanistically faithful mathematical laws that explain causal structure, obey physical symmetries and conservation principles, and extrapolate far outside observed training regimes. While deep neural surrogates and Neural ODEs achieve strong interpolation error, they act as opaque function approximators whose extrapolation degrades sharply out of distribution. Conversely, existing automated equation-discovery pipelines exhibit five coupled scientific bottlenecks:
+Scientific theories advance through compact, mechanistically faithful differential equations that explain causal structure, preserve physical symmetries and conservation laws, and generalize far outside observed training regimes. While deep neural surrogates and Neural ODEs achieve low interpolation error, they act as opaque function approximators whose out-of-distribution (OOD) extrapolation degrades sharply. Conversely, existing automated equation-discovery pipelines suffer five coupled bottlenecks under realistic experimental conditions:
 
 \begin{enumerate}
-  \item \textbf{Hidden Errors-in-Variables (EIV) Bias in Weak-Form Regression.} Integration by parts in Weak-SINDy \citep{messenger2021weak} removes derivatives of noisy observations, but nonlinear self-power terms evaluated on noisy measurements $\tilde{x} = x + \epsilon$ retain systematic bias ($\mathbb{E}[\tilde{x}^2] = x^2 + \sigma^2$, $\mathbb{E}[\tilde{x}^3] = x^3 + 3\sigma^2 x$), distorting coefficients at $15\text{--}30\%$ noise.
-  \item \textbf{Cyclic Feedback Collapse \& Faithfulness Violations in Causal Discovery.} Constraint- and score-based static DAG learners (PC, NOTEARS) assume i.i.d.\ acyclicity and collapse on coupled ODEs with bidirectional feedback ($x \leftrightarrow y$). Furthermore, exact physical conservation laws (e.g., $S+I+R=N$) induce deterministic collinearity that violates causal faithfulness under full-set conditioning.
-  \item \textbf{The Symmetry Chicken-and-Egg Paradox.} Classical Lie prolongation $[V, f]=0$ and conservation checks $\nabla H \cdot f = 0$ presuppose that $f(x)$ is already known, preventing geometric structure from guiding symbolic search.
-  \item \textbf{Correlated Subdomain Overfitting \& Rigid Function Classes.} Overlapping weak-form windows inflate nominal sample size $K$ relative to effective independent degrees of freedom $K_{\text{eff}}$, causing BIC/MDL selection to overfit spurious high-degree terms; meanwhile linear-dictionary solvers cannot directly express rational kinetics (e.g., Michaelis--Menten).
-  \item \textbf{Passive Offline Fitting Without Verification.} Most frameworks neither design falsifying experiments when multiple Pareto theories tie, nor adapt online under structural regime shifts, nor emit machine-checkable proof certificates.
+  \item \textbf{Hidden Errors-in-Variables (EIV) Bias in Weak-Form Regression.} Integration by parts in Weak-SINDy \citep{messenger2021weak} eliminates noisy state derivatives, yet nonlinear self-power terms evaluated on noisy observations $\tilde{x} = x + \epsilon$ retain systematic bias ($\mathbb{E}[\tilde{x}^2] = x^2 + \sigma^2$, $\mathbb{E}[\tilde{x}^3] = x^3 + 3\sigma^2 x$), distorting recovered coefficients at $15\text{--}30\%$ noise.
+  \item \textbf{Cyclic Feedback Collapse \& Faithfulness Violations in Causal Discovery.} Static DAG learners (PC, NOTEARS) assume i.i.d.\ acyclicity and collapse on coupled ODEs with bidirectional feedback ($x \leftrightarrow y$). Moreover, exact conservation laws (e.g., $S+I+R=N$) induce deterministic collinearity that causes full-set conditional independence tests to drop true causal parents and causes unmasked sparse regression to lose rank.
+  \item \textbf{The Symmetry Chicken-and-Egg Paradox.} Classical Lie prolongation $[V, \mathbf{f}]=0$ and conservation checks $\nabla H \cdot \mathbf{f} = 0$ presuppose that $\mathbf{f}(\mathbf{x})$ is already known, preventing geometric invariants from pruning the symbolic search space.
+  \item \textbf{Correlated Subdomain Overfitting \& Rigid Basis Classes.} Overlapping weak-form windows inflate nominal sample count $K$ relative to effective independent degrees of freedom $K_{\text{eff}}$, causing BIC/MDL criteria to overfit spurious terms; meanwhile linear-dictionary solvers cannot directly express rational kinetics (e.g., Michaelis--Menten).
+  \item \textbf{Passive One-Shot Fitting Without Verification.} Existing tools rarely design discriminating experiments when rival Pareto laws tie, adapt online under structural regime shifts, or emit machine-checkable proof certificates.
 \end{enumerate}
 
-We address all five bottlenecks through \textbf{VECSD (ASDS-OMEGA v2.0)}, establishing a single variational foundation across preprocessing, causal inference, symmetry/conservation extraction, hybrid symbolic evolution, active experimentation, and formal Lean~4 certification.
+We resolve all five bottlenecks through \textbf{VECSD} (implemented in \textbf{ASDS-OMEGA v2.0}), unifying six discovery layers inside a single variational operator-theoretic substrate (Table~\ref{tab:arch}).
 
 %======================================================================
 \section{Related Work}
 %======================================================================
-Symbolic law discovery traces from evolutionary genetic programming (Eureqa \citep{schmidt2009distilling}, PySR \citep{cranmer2023pysr}) and physics-inspired decomposition (AI~Feynman \citep{udrescu2020ai}) to sparse dictionary identification (SINDy \citep{brunton2016discovering}, PySINDy \citep{desilva2020pysindy}) and weak/integral formulations (Weak-SINDy \citep{messenger2021weak}). Dynamical causal discovery includes Convergent Cross Mapping (CCM \citep{sugihara2012detecting}), Invariant Causal Prediction (ICP \citep{peters2016causal}), and Model-X knockoffs \citep{candes2018panning}. Data-driven symmetry and invariant discovery spans Hamiltonian neural networks and Lie-group neural networks, which typically remain black-box and data-hungry. VECSD bridges these fields by unifying shrinkage-regularized cumulant-debiased variational operators, faithfulness-guarded differential causality, model-free foliation/Reynolds projection, and formal symbolic/Lean~4 verification in one deterministic framework.
+Symbolic law discovery spans evolutionary genetic programming (Eureqa \citep{schmidt2009distilling}, PySR \citep{cranmer2023pysr}), physics-inspired decomposition (AI~Feynman \citep{udrescu2020ai}), sparse dictionary identification (SINDy \citep{brunton2016discovering}, PySINDy \citep{desilva2020pysindy}), and Galerkin weak formulations (Weak-SINDy \citep{messenger2021weak}). Dynamical causal discovery includes Convergent Cross Mapping (CCM \citep{sugihara2012detecting}), Invariant Causal Prediction (ICP \citep{peters2016causal}), and Model-X knockoffs \citep{candes2018panning}. Data-driven symmetry discovery typically relies on black-box Hamiltonian or equivariant neural networks that do not yield symbolic laws. VECSD bridges these areas by combining shrinkage-regularized cumulant-debiased weak operators, faithfulness-guarded differential causality, model-free foliation/Reynolds projection, hybrid rational/evolutionary search, and formal SymPy/Lean~4 verification in one deterministic framework.
 
 %======================================================================
 \section{Theoretical Framework: Variational Equivariant Causal-Symbolic Discovery}
 %======================================================================
-Consider an unknown autonomous dynamical system $\dot{\mathbf{x}}(t) = \mathbf{f}(\mathbf{x}(t))$ observed across $R$ trajectories $\tilde{\mathbf{x}}^{(r)}(t_n) = \mathbf{x}^{(r)}(t_n) + \boldsymbol{\epsilon}_n^{(r)}$ with zero-mean independent channel noise $\boldsymbol{\epsilon}_n \sim \mathcal{N}(\mathbf{0}, \operatorname{diag}(\sigma_1^2,\dots,\sigma_d^2))$.
+Consider an unknown autonomous dynamical system $\dot{\mathbf{x}}(t) = \mathbf{f}(\mathbf{x}(t))$ observed across $R$ trajectories $\tilde{\mathbf{x}}^{(r)}(t_n) = \mathbf{x}^{(r)}(t_n) + \boldsymbol{\epsilon}_n^{(r)}$ with zero-mean independent channel noise $\boldsymbol{\epsilon}_n \sim \mathcal{N}(\mathbf{0}, \operatorname{diag}(\sigma_1^2,\dots,\sigma_d^2))$. Table~\ref{tab:arch} summarizes the six-layer architecture, and Figure~\ref{fig:alg} outlines the end-to-end execution flow.
 
-\subsection{Layer 1: Multi-Scale Adaptive Variational Projection (MS-AVP) \& Shrinkage-Regularized Cumulant Debiasing}
-On each subdomain $[t_a, t_b]$ of half-width $h_k = W_k/2$, let $\phi_k(t) = Z_k^{-1}(1 - u^2)^p$ ($u=(t-t_k)/h_k \in [-1,1]$, $p \ge 4$) be a compactly supported $C^p$ bump test function normalized so $\int \phi_k\,dt = 1$. Integration by parts yields noise-attenuated weak velocities without differentiating $\tilde{\mathbf{x}}$:
+\begin{table}[!htbp]
+\centering
+\caption{Six-layer VECSD architecture sharing a single variational integral substrate.}
+\label{tab:arch}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.20\textwidth} >{\raggedright\arraybackslash}p{0.44\textwidth} >{\raggedright\arraybackslash}p{0.31\textwidth}@{}}
+\toprule
+\textbf{Layer} & \textbf{Core Variational Operator / Mechanism} & \textbf{Theoretical Guarantee} \\
+\midrule
+1. \textbf{MS-AVP} & Adaptive $C^p$ bump quadrature, Wavelet-MAD $\hat{\sigma}_j$, Hermite/trig EIV debiasing, 2D PDE weak form, Buckingham~$\Pi$ & Theorem~\ref{thm:hermite} \& Remark~\ref{rem:shrinkage}: unbiased $p_j=2$, stabilized $p_j \ge 3$ \\
+2. \textbf{VIFC} & Direct $x_j \to \dot{x}_i$ fusion: WF-cHSIC block knockoffs, pCCM, RBF Dyn-ICP, Collinearity Guard & Theorem~\ref{thm:faithfulness}: faithfulness restoration on $H(\mathbf{x})=C$ \\
+3. \textbf{W-LIND} & Nullspace $\langle\dot{\phi}_k,\psi(\mathbf{x})\rangle\mathbf{c}=0$, discrete/Lie SVD, Liouville $\nabla\cdot\mathbf{f}$, Reynolds $\mathcal{P}_{\mathcal{G}}$ & Theorem~\ref{thm:wlind}: zero-derivative conservation \& idempotent pruning \\
+4. \textbf{EVG-HE} & Tiered V-ESP + KKT, TLS weak rational ($S\dot{S}$), residual-guided VarPro GP, $K_{\text{eff}}$-MDL, Thompson bandit & Exact rational recovery, non-overfitting $K_{\text{eff}}$ sparsity \\
+5. \textbf{PAFE \& SLR} & Max-disagreement query-by-committee \& Dual-Channel CUSUM drift regeneration & Optimal Bayesian entropy collapse \& conservation preservation \\
+6. \textbf{ASDS-Verify} & SymPy analytical prover ($\nabla H\cdot\hat{\mathbf{f}}\equiv 0$, equilibria, $\nabla\cdot\hat{\mathbf{f}}$) \& \texttt{sorry}-free Lean~4 export & Machine-checkable algebraic proof certificates \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\fcolorbox{black!25}{black!2}{%
+\begin{minipage}{0.96\textwidth}
+\small
+\textbf{Algorithm 1: End-to-End VECSD Discovery Pipeline (\texttt{ASDS-OMEGA v2.0})}\\
+\rule{\linewidth}{0.4pt}
+\textbf{Input:} Noisy trajectories $\{\tilde{\mathbf{x}}^{(r)}(t)\}_{r=1}^R$, optional SI units $U$, active budget $B$.\\
+1.\ \textbf{MS-AVP:} Estimate $\hat{\sigma}_j$ via Wavelet-MAD; adapt window widths $W_k^*$; compute weak velocities $v_{i,k} = -\langle\dot{\phi}_k, \tilde{x}_i\rangle$ and shrinkage-debiased weak basis $\langle\phi_k, H_{\mathbf{p}}^{\text{eff}}(\tilde{\mathbf{x}})\rangle$.\\
+2.\ \textbf{VIFC:} Infer direct differential causal matrix $P_{ji} = P(x_j \to \dot{x}_i)$ via WF-cHSIC knockoffs (with Collinearity Guard $\mathcal{S}_j$), pCCM, and RBF Dyn-ICP; threshold to causal mask $A_{ji}$.\\
+3.\ \textbf{W-LIND:} Solve $\langle\dot{\phi}_k, \psi(\mathbf{x})\rangle\mathbf{c}=0$ with Univariate Exclusion for invariants $H(\mathbf{x})$; detect discrete group $\mathcal{G}$ and Lie generators; construct Reynolds projection $\mathcal{P}_{\mathcal{G}}$.\\
+4.\ \textbf{EVG-HE:} For each $i=1,\dots,d$ inside the causal- and $\mathcal{P}_{\mathcal{G}}$-pruned basis, evaluate tiered V-ESP (+ KKT conservation if linear $H$ exists), TLS weak rational solver, and VarPro GP; select $\hat{f}_i$ minimizing $K_{\text{eff}}$-MDL.\\
+5.\ \textbf{PAFE (optional):} If posterior entropy remains high, query oracle at $\mathbf{x}_0^* = \arg\max \mathbb{E}_{a<b}\int \|\Phi_{\hat{\mathbf{f}}^{(a)}} - \Phi_{\hat{\mathbf{f}}^{(b)}}\|^2 dt$ and update posteriors.\\
+6.\ \textbf{ASDS-Verify:} Prove conservation, equivariance, equilibria, and $\nabla\cdot\hat{\mathbf{f}}$ in SymPy; export \texttt{sorry}-free Lean~4 certificate.
+\end{minipage}
+}
+\caption{End-to-end VECSD discovery pipeline.}
+\label{fig:alg}
+\end{figure}
+
+\subsection{Layer 1: Multi-Scale Adaptive Variational Projection (MS-AVP) \& Cumulant Debiasing}
+On each subdomain $[t_a, t_b]$ of half-width $h_k = W_k/2$, let $\phi_k(t) = Z_k^{-1}(1 - u^2)^p$ ($u=(t-t_k)/h_k \in [-1,1]$, $p \ge 4$) be a compactly supported $C^p$ bump normalized so $\int \phi_k\,dt = 1$. Integration by parts yields noise-attenuated weak velocities without differentiating $\tilde{\mathbf{x}}$:
 \begin{equation}
   v_{i,k} = -\int_{t_a}^{t_b} \dot{\phi}_k(t)\,\tilde{x}_i(t)\,dt \approx \int_{t_a}^{t_b} \phi_k(t)\,f_i(\mathbf{x}(t))\,dt.
 \end{equation}
-Per-channel noise $\hat{\sigma}_j$ is estimated directly via Donoho--Johnstone Haar-detail median absolute deviation \citep{donoho1994ideal}, and local window widths $W_k^* \propto (\hat{\sigma}^2 / \|\mathbf{x}^{(2)}\|^2_{\text{loc}}(t_k))^{1/(2p+5)}$ adapt to local trajectory curvature.
+Per-channel noise $\hat{\sigma}_j$ is estimated via Donoho--Johnstone Haar-detail median absolute deviation \citep{donoho1994ideal}, and local window widths $W_k^* \propto (\hat{\sigma}^2 / \|\mathbf{x}^{(2)}\|^2_{\text{loc}}(t_k))^{1/(2p+5)}$ adapt to local curvature.
 
 \begin{theorem}[Asymptotic Unbiasedness of Hermite-Debiased Weak Inner Products]
 \label{thm:hermite}
@@ -83,24 +132,25 @@ Let $\tilde{\mathbf{x}}(t) = \mathbf{x}(t) + \boldsymbol{\epsilon}(t)$ with inde
 \end{equation}
 \end{theorem}
 \begin{proof}
-By the exponential generating function of probabilists' Hermite polynomials, $\sum_{m=0}^\infty \frac{s^m}{m!} H_m(x+\epsilon; \sigma^2) = \exp\!\left(s(x+\epsilon) - \frac{1}{2}s^2\sigma^2\right)$. Taking expectation over $\epsilon \sim \mathcal{N}(0,\sigma^2)$ yields $\exp(sx)\mathbb{E}[e^{s\epsilon}]e^{-s^2\sigma^2/2} = \exp(sx) = \sum_{m=0}^\infty \frac{s^m}{m!} x^m$. Matching coefficients of $s^m$ gives $\mathbb{E}[H_m(\tilde{x}_j;\sigma_j^2)] = x_j^m$. Independence across channels factorizes the product expectation, and linearity of the weak quadrature operator $\langle \phi_k, \cdot \rangle$ yields the first identity. For the trigonometric identity, $\mathbb{E}[\sin(x_j+\epsilon_j)] = \sin(x_j)\mathbb{E}[\cos\epsilon_j] + \cos(x_j)\mathbb{E}[\sin\epsilon_j] = e^{-\sigma_j^2/2}\sin(x_j)$ by the Gaussian characteristic function, so multiplying by $e^{+\sigma_j^2/2}$ restores exact unbiasedness.
+By the exponential generating function of probabilists' Hermite polynomials, $\sum_{m=0}^\infty \frac{s^m}{m!} H_m(x+\epsilon; \sigma^2) = \exp\!\left(s(x+\epsilon) - \frac{1}{2}s^2\sigma^2\right)$. Taking expectation over $\epsilon \sim \mathcal{N}(0,\sigma^2)$ yields $\exp(sx)\mathbb{E}[e^{s\epsilon}]e^{-s^2\sigma^2/2} = \exp(sx) = \sum_{m=0}^\infty \frac{s^m}{m!} x^m$. Matching coefficients of $s^m$ gives $\mathbb{E}[H_m(\tilde{x}_j;\sigma_j^2)] = x_j^m$. Independence across channels factorizes the product expectation, and linearity of $\langle \phi_k, \cdot \rangle$ yields the first identity. For $\sin$, $\mathbb{E}[\sin(x_j+\epsilon_j)] = \sin(x_j)\mathbb{E}[\cos\epsilon_j] + \cos(x_j)\mathbb{E}[\sin\epsilon_j] = e^{-\sigma_j^2/2}\sin(x_j)$, so multiplying by $e^{+\sigma_j^2/2}$ restores exact unbiasedness.
 \end{proof}
 
 \begin{remark}[SNR-Shrinkage Regularization for Cubic Self-Powers]
-For degree $p_j \ge 3$, exact unbiased subtraction $H_3(\tilde{x}_j;\hat{\sigma}_j^2)=\tilde{x}_j^3 - 3\hat{\sigma}_j^2\tilde{x}_j$ incurs variance inflation when $\hat{\sigma}_j^2/\operatorname{Var}(\tilde{x}_j)$ is large ($\ge 20\%$ noise). Applying James--Stein-style SNR shrinkage $v_{\text{eff}}(p_j, j) = \hat{\sigma}_j^2 / (1 + 40(p_j - 2)\hat{\sigma}_j^2/\operatorname{Var}(\tilde{x}_j))$ for $p_j \ge 3$ preserves exact unbiasedness for $p_j=2$ while stabilizing MSE at extreme noise.
+\label{rem:shrinkage}
+For degree $p_j \ge 3$, exact unbiased subtraction $H_3(\tilde{x}_j;\hat{\sigma}_j^2)=\tilde{x}_j^3 - 3\hat{\sigma}_j^2\tilde{x}_j$ incurs variance inflation when $\hat{\sigma}_j^2/\operatorname{Var}(\tilde{x}_j)$ is large ($\ge 20\%$ noise). Applying James--Stein-style SNR shrinkage $v_{\text{eff}}(p_j, j) = \hat{\sigma}_j^2 / (1 + 40(p_j - 2)\hat{\sigma}_j^2/\operatorname{Var}(\tilde{x}_j))$ for $p_j \ge 3$ preserves exact unbiasedness for $p_j=2$ (e.g., $x^2, x^2y$) while stabilizing MSE under extreme noise.
 \end{remark}
 
-For $1+1$D PDEs $u_t = F(u, u_x, u_{xx}, \dots)$, MS-AVP extends identically via separable spacetime bumps $\Phi(x,t)=\phi_x(x)\phi_t(t)$, transferring all spatial and temporal derivatives onto $\Phi$. When SI unit exponents are supplied, exact rational nullspace extraction computes Buckingham~$\Pi$ groups and enforces transcendental dimensional validity.
+For $1+1$D PDEs $u_t = F(u, u_x, u_{xx}, \dots)$, MS-AVP extends identically via separable spacetime bumps $\Phi(x,t)=\phi_x(x)\phi_t(t)$, transferring all derivatives onto $\Phi$ (e.g., $\langle \Phi, u u_x\rangle = -\frac{1}{2}\langle \phi_x'\phi_t, H_2(\tilde{u};\hat{\sigma}^2)\rangle$). When SI unit exponents are supplied, rational nullspace extraction computes Buckingham~$\Pi$ groups and rejects dimensionally invalid transcendental arguments.
 
 \subsection{Layer 2: Variational Interventional Flow Causality (VIFC)}
-To handle cyclic ODE feedback loops, VIFC targets the \emph{direct differential causal graph} $G_{\text{diff}} = (V, E)$ where $(j \to i) \in E \iff \partial f_i / \partial x_j \not\equiv 0$, which is bipartite and acyclic from states $x(t)$ to flows $\dot{x}(t)$. VIFC fuses three orthogonal estimators in weak-form space: (i) Weak-Form Conditional HSIC (\texttt{WF-cHSIC}) with temporal block-permuted knockoffs for FDR control, (ii) Multivariate Partial CCM (\texttt{pCCM}) in delay-differential space, and (iii) Universal RBF Multi-Trajectory Invariant Causal Prediction (\texttt{Dyn-ICP}).
+To handle cyclic ODE feedback loops, VIFC targets the \emph{direct differential causal graph} $G_{\text{diff}} = (V, E)$ where $(j \to i) \in E \iff \partial f_i / \partial x_j \not\equiv 0$, which is bipartite and acyclic from states $x(t)$ to flows $\dot{x}(t)$. VIFC fuses three estimators in weak-form space: (i) Weak-Form Conditional HSIC (\texttt{WF-cHSIC}) with temporal block-permuted knockoffs for FDR control, (ii) Multivariate Partial CCM (\texttt{pCCM}), and (iii) Universal RBF Multi-Trajectory Invariant Causal Prediction (\texttt{Dyn-ICP}).
 
 \begin{theorem}[Manifold-Aware Faithfulness Restoration on Conserved Submanifolds]
 \label{thm:faithfulness}
 Suppose trajectories lie on an exact smooth conservation manifold $H(\mathbf{x}) = C$ with $\partial H/\partial x_j \neq 0$ (e.g., $S+I+R=1$). Then $x_j$ is a deterministic function of $\mathbf{x}_{-j}$, causing full-set conditional independence tests $x_j \perp\!\!\!\perp \dot{x}_i \mid \mathbf{x}_{-j}$ to return false negatives for true direct parents $j \to i$. Restricting conditioning sets to maximal non-collinear subsets $\mathcal{S}_j = \{ S \subset \{1,\dots,d\}\setminus\{j\} : R^2(x_j \sim \mathbf{x}_S) < 1 - \tau \}$ eliminates deterministic faithfulness violations while preserving blocking of indirect chains $x_j \to x_m \to \dot{x}_i$.
 \end{theorem}
 \begin{proof}
-Under $H(\mathbf{x})=C$, the implicit function theorem expresses $x_j = g(\mathbf{x}_{-j})$ locally, so $\operatorname{Var}(x_j \mid \mathbf{x}_{-j}) = 0$ and any residualized dependence statistic vanishes identically regardless of $\partial f_i/\partial x_j$. Conversely, for any proper subset $S \in \mathcal{S}_j$ with $R^2(x_j \sim \mathbf{x}_S) < 1-\tau$, the conditional residual $x_j - \mathbb{E}[x_j \mid \mathbf{x}_S]$ retains strictly positive variance $\ge \tau \operatorname{Var}(x_j)$, preserving identifiability of $j \to i$, while any indirect mediator $m \in S$ satisfies $\mathbb{E}[\dot{x}_i \mid \mathbf{x}_S] = f_i(\mathbf{x}_S)$ with zero residual dependence on $x_j$.
+Under $H(\mathbf{x})=C$, the implicit function theorem expresses $x_j = g(\mathbf{x}_{-j})$ locally, so $\operatorname{Var}(x_j \mid \mathbf{x}_{-j}) = 0$ and any residualized dependence statistic vanishes identically regardless of $\partial f_i/\partial x_j$. Conversely, for any $S \in \mathcal{S}_j$ with $R^2(x_j \sim \mathbf{x}_S) < 1-\tau$, the residual $x_j - \mathbb{E}[x_j \mid \mathbf{x}_S]$ retains strictly positive variance $\ge \tau \operatorname{Var}(x_j)$, preserving identifiability of $j \to i$, while any indirect mediator $m \in S$ satisfies $\mathbb{E}[\dot{x}_i \mid \mathbf{x}_S] = f_i(\mathbf{x}_S)$ with zero residual dependence on $x_j$.
 \end{proof}
 
 \subsection{Layer 3: Model-Free Weak-Form Lie-Noether \& Foliation Discovery (W-LIND)}
@@ -116,79 +166,106 @@ is an exact idempotent projection ($\mathcal{P}_{\mathcal{G}}^2 = \mathcal{P}_{\
 Integration by parts gives $\sum_m c_m \langle \dot{\phi}_k, \psi_m(\mathbf{x})\rangle = \int \dot{\phi}_k H(\mathbf{x})\,dt = -\int \phi_k \frac{dH}{dt}\,dt = 0$, since $\phi_k$ vanishes at the boundary. If $|\operatorname{vars}(\mathbf{c})|=1$ and $\dot{x}_j \not\equiv 0$, $H(x_j)=\text{const}$ implies $H'(x_j)\equiv 0$, so $H$ can only be an algebraic identity rather than a dynamical first integral. Finally, for any $h \in \mathcal{G}$, $h^{-1}\mathcal{P}_{\mathcal{G}}[\mathbf{f}](h\cdot\mathbf{x}) = |\mathcal{G}|^{-1}\sum_{g\in\mathcal{G}} (gh)^{-1}\mathbf{f}(gh\cdot\mathbf{x}) = \mathcal{P}_{\mathcal{G}}[\mathbf{f}](\mathbf{x})$, proving equivariance and idempotence.
 \end{proof}
 
-W-LIND further computes continuous Lie point symmetries $[V, \mathbf{f}]=0$ via SVD prolongation, verifies Lie-algebra closure $[V_a, V_b] = C_{ab}^c V_c$, and classifies conservative vs.\ dissipative chaotic regimes via Liouville divergence $\nabla\cdot\mathbf{f}$ and Rosenstein maximal Lyapunov exponents $\hat{\lambda}_1$.
+W-LIND also computes continuous Lie point symmetries $[V, \mathbf{f}]=0$ via SVD prolongation, checks Lie-algebra closure $[V_a, V_b] = C_{ab}^c V_c$, and classifies conservative vs.\ dissipative chaotic regimes via Liouville divergence $\nabla\cdot\mathbf{f}$ and Rosenstein maximal Lyapunov exponents $\hat{\lambda}_1$.
 
-\subsection{Layers 4--6: EVG-HE, Active Falsification, Drift Regeneration \& Lean 4}
-\textbf{EVG-HE} operates strictly inside the causal- and Reynolds-pruned basis, using:
-(i) \emph{Tiered Stability-Selected V-ESP} with a noise-floor-aware cubic variance-gain guard and conservation-aware manifold rank reduction;
-(ii) \emph{Total-Least-Squares (SVD) Implicit Weak-Form Rational Discovery} using exact integration by parts $\langle \phi_k, x_i \dot{x}_i \rangle = -\frac{1}{2}\langle \dot{\phi}_k, H_2(\tilde{x}_i; \hat{\sigma}_i^2) \rangle$;
-(iii) \emph{Semantic Residual-Guided Weak-Form NSGA-II GP} with closed-form Variable Projection (VarPro) and nonsingular denominator guards;
-(iv) \emph{Effective-Sample-Size ($K_{\text{eff}} = \sum_r T_r / \bar{W}$) MDL Continued-Fraction Rationalization}; and
-(v) a \emph{Contextual Thompson-Sampling Meta-Controller}.
-\textbf{PAFE} selects maximally falsifying initial conditions via committee disagreement, \textbf{SLR} detects online regime shifts via Dual-Channel CUSUM while preserving conservation manifolds, and \textbf{ASDS-Verify} proves conservation, equivariance, equilibria, and divergence in SymPy and exports \texttt{sorry}-free \textbf{Lean~4} theorem certificates.
+\subsection{Layer 4: Equivariant Variational Grammar-Guided Hybrid Evolution (EVG-HE)}
+Operating strictly inside the causal- and Reynolds-pruned basis, EVG-HE combines four solvers orchestrated by a Contextual Thompson-Sampling Meta-Controller:
+(1) \emph{Tiered Stability-Selected V-ESP} fits linear/quadratic tiers before admitting cubic or trigonometric terms (guarded by noise-floor variance gain) and solves all equations jointly under KKT conservation constraints $\mathbf{C}\hat{\mathbf{f}} = \mathbf{0}$ whenever linear invariants exist;
+(2) \emph{Total-Least-Squares (SVD) Implicit Weak-Form Rational Discovery} clears denominators $D(\mathbf{x})\dot{x}_i = N(\mathbf{x})$ without differentiation via exact integration by parts $\langle \phi_k, x_i \dot{x}_i \rangle = -\frac{1}{2}\langle \dot{\phi}_k, H_2(\tilde{x}_i; \hat{\sigma}_i^2) \rangle$;
+(3) \emph{Semantic Residual-Guided Weak-Form NSGA-II GP} evolves expression trees guided by residual correlations, optimizing linear/nonlinear constants via Variable Projection (VarPro) while rejecting singular denominators; and
+(4) \emph{Effective-Sample-Size MDL Rationalization} scores candidate equations and continued-fraction rational snappings using $K_{\text{eff}} = \sum_{r=1}^R T_r / \bar{W}$ independent degrees of freedom in $\text{MDL} = K_{\text{eff}}\ln(\text{MSE}) + C_{\text{expr}}\ln(K_{\text{eff}})$.
+
+\subsection{Layers 5--6: Active Falsification (PAFE), Online Drift (SLR) \& Lean 4 Verification}
+When rival Pareto hypotheses tie, \textbf{PAFE} selects maximally falsifying initial conditions $\mathbf{x}_0^* = \arg\max_{\mathbf{x}_0}\sum_{a<b} p_a p_b \int_0^T \|\mathbf{x}^{(a)}(t;\mathbf{x}_0) - \mathbf{x}^{(b)}(t;\mathbf{x}_0)\|^2 dt$. On streaming data, \textbf{SLR} monitors sliding weak-form residuals with a Dual-Channel CUSUM statistic $g_t = \max(0, g_{t-1} + r_t - \mu_0 - \delta)$ and surgically regenerates post-drift dynamics while preserving verified conservation manifolds. Finally, \textbf{ASDS-Verify} proves conservation ($\nabla H\cdot\hat{\mathbf{f}}\equiv 0$), discrete equivariance, Lie brackets, equilibria, and divergence analytically in SymPy and exports \texttt{sorry}-free \textbf{Lean~4} theorem certificates.
 
 %======================================================================
-\section{Experimental Results}
+\section{Experimental Evaluation}
 %======================================================================
-All results below are auto-generated directly from deterministic multi-seed execution (\texttt{results/benchmark\_ledger.json}) across $n=5$ independent random seeds with Student-$t$ 95\% confidence intervals and one-sided paired Wilcoxon signed-rank tests.
+All experiments are executed deterministically from a single reproducible ledger (\texttt{results/benchmark\_ledger.json}) across $n=5$ independent random seeds with Student-$t$ 95\% confidence intervals and one-sided paired Wilcoxon signed-rank tests.
 
-\subsection{Multi-Domain Recovery, High-Dimensional Scaling \& Out-of-Domain Generalization}
-Table~\ref{tab:main_benchmark} and Figure~\ref{fig:head_to_head} compare ASDS-OMEGA~v2.0 against official \textbf{PySINDy~v2.1} \citep{desilva2020pysindy}, Weak-SINDy, standard SINDy, Pure GP, and Neural MLPs across 8 core dynamical benchmarks at $5\%$ Gaussian noise ($N=40$ trials). ASDS-OMEGA~v2.0 achieves \textbf{0.997 $\pm$ 0.002} overall symbolic match ($p < 10^{-5}$ against every baseline), cleanly resolving conservation manifold collapse on SIR ($1.000$ vs.\ $0.041$ PySINDy) and rational kinetics on Michaelis--Menten ($0.985$). On 1+1D PDEs at $5\%$ noise, 2D spacetime MS-AVP recovers Burgers ($u_t = -1.003\,u u_x + 0.147\,u_{xx}$, $R^2=0.986 \pm 0.002$) and Advection--Diffusion ($u_t = -0.799\,u_x + 0.119\,u_{xx}$, $R^2=0.993 \pm 0.001$). To verify scaling beyond $d \le 4$, we evaluate 8-dimensional \textbf{Lorenz-96} ($\dot{x}_i = (x_{i+1}-x_{i-2})x_{i-1} - x_i + 8$) at $5\%$ noise across 5 seeds: ASDS-OMEGA~v2.0 achieves \textbf{1.000 $\pm$ 0.000} symbolic match in $16.8\text{s}$ mean runtime, outperforming PySINDy~v2.1 ($0.948$) and Weak-SINDy ($0.998$).
+\subsection{Multi-Domain ODE Recovery \& Out-of-Domain Generalization}
+Table~\ref{tab:main_benchmark} and Figure~\ref{fig:head_to_head} compare ASDS-OMEGA~v2.0 against official \textbf{PySINDy~v2.1} \citep{desilva2020pysindy}, Weak-SINDy, standard SINDy, Pure GP, and black-box Neural MLPs across 8 ODE benchmarks at $5\%$ Gaussian noise ($N=40$ trials). ASDS-OMEGA~v2.0 achieves \textbf{0.997 $\pm$ 0.002} overall symbolic match ($p < 10^{-5}$ against every baseline), resolving conservation-manifold rank collapse on SIR ($1.000$ vs.\ $0.041$ PySINDy~v2.1 and $0.246$ Weak-SINDy), rational enzyme kinetics on Michaelis--Menten ($0.985$ vs.\ $0.851\text{--}0.864$), and $1/r^3$ central-force orbits on Kepler ($1.000$ vs.\ $0.498$). On $3\sigma$ OOD extrapolation, discovered symbolic laws attain near-zero error ($0.0000\text{--}0.0176$) while Neural MLPs degrade by $2\text{--}4$ orders of magnitude ($0.073\text{--}1.156$).
 
 \input{../tables/table1_main_benchmark.tex}
 
-\begin{figure*}[t]
+\begin{figure}[!htbp]
   \centering
   \includegraphics[width=\textwidth]{../../results/figures/fig6_head_to_head_and_ood.png}
-  \caption{Left: Multi-seed head-to-head symbolic recovery across 8 ODE benchmarks at $5\%$ Gaussian noise. Right: $3\sigma$ out-of-domain extrapolation RMSE (log scale) comparing ASDS-OMEGA~v2.0 symbolic laws against black-box Neural MLPs.}
+  \caption{Left: Multi-seed head-to-head symbolic recovery across 8 ODE benchmarks at $5\%$ Gaussian noise. Right: $3\sigma$ OOD extrapolation RMSE (log scale) comparing ASDS-OMEGA~v2.0 symbolic laws against Neural MLPs.}
   \label{fig:head_to_head}
-\end{figure*}
+\end{figure}
+
+\subsection{High-Dimensional Scaling (8D Lorenz-96) \& 1+1D Spatiotemporal PDEs}
+To evaluate scaling beyond low-dimensional systems ($d \le 4$) and into spatiotemporal dynamics, Table~\ref{tab:scaling_pde} reports 5-seed recovery at $5\%$ Gaussian noise on 8-dimensional \textbf{Lorenz-96} ($\dot{x}_i = (x_{i+1}-x_{i-2})x_{i-1} - x_i + 8$) and two 1+1D PDEs. On 8D Lorenz-96, ASDS-OMEGA~v2.0 achieves \textbf{1.000 $\pm$ 0.000} symbolic match in $16.8\text{s}$ mean runtime, significantly outperforming PySINDy~v2.1 ($0.948$, $p=0.031$) and Weak-SINDy ($0.998$, $p=0.031$). On 1+1D PDEs, 2D spacetime MS-AVP recovers exact advection and diffusion operators with Weak $R^2 \ge 0.986$.
+
+\begin{table}[!htbp]
+\centering
+\caption{High-dimensional scaling ($d=8$ Lorenz-96) and 1+1D spatiotemporal PDE recovery at $5\%$ Gaussian noise ($n=5$ seeds, mean $\pm$ 95\% CI).}
+\label{tab:scaling_pde}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccc}
+\toprule
+\textbf{System} & \textbf{Discovered Law (ASDS-OMEGA v2.0)} & \textbf{ASDS Metric} & \textbf{PySINDy v2.1} & \textbf{Weak-SINDy} \\
+\midrule
+Lorenz-96 ($d=8$) & $\dot{x}_i = (x_{i+1}-x_{i-2})x_{i-1} - x_i + 8$ & \textbf{SM 1.000 $\pm$ 0.000} & SM 0.948 $\pm$ 0.028 & SM 0.998 $\pm$ 0.001 \\
+Viscous Burgers PDE & $u_t = -1.0026\,u u_x + 0.1471\,u_{xx}$ & Weak $R^2$ 0.986 $\pm$ 0.002 & --- & --- \\
+Advection--Diffusion PDE & $u_t = -0.7993\,u_x + 0.1192\,u_{xx}$ & Weak $R^2$ 0.993 $\pm$ 0.001 & --- & --- \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
 
 \subsection{High-Noise Stress Testing \& Shrinkage-Regularized Hermite EIV Isolation}
-Table~\ref{tab:cumulant_eiv} and Figure~\ref{fig:noise} isolate Theorem~\ref{thm:hermite} and Remark~1 on cubic self-power systems (Van der Pol $-x^2 y$ and Duffing $-x^3$) alongside Lorenz-63 from $0\%$ to $30\%$ noise. On Van der Pol, Hermite cumulant debiasing cuts coefficient error nearly in half across every noise regime ($0.004$ vs.\ $0.006$ at $15\%$; $0.006$ vs.\ $0.011$ at $20\%$; $11\times$ lower than PySINDy~v2.1). On Duffing, SNR-shrinkage regularization reduces extreme-noise error at $25\%$ and $30\%$ down to \textbf{0.024} and \textbf{0.033}—outperforming un-debiased ASDS ($0.12$--$0.35$), PySINDy~v2.1 ($0.06$--$0.07$), Weak-SINDy ($0.14$--$0.23$), and Standard SINDy ($0.45$).
+Table~\ref{tab:cumulant_eiv} and Figure~\ref{fig:noise} isolate Theorem~\ref{thm:hermite} and Remark~\ref{rem:shrinkage} across $0\%\text{--}30\%$ noise on Van der Pol ($-x^2 y$), Duffing ($-x^3$), and Lorenz-63. On Van der Pol, Hermite debiasing yields the lowest error across every noise level ($0.004\text{--}0.011$ at $15\%\text{--}30\%$, up to $13\times$ lower than PySINDy~v2.1 at $0.147$). On Duffing, SNR-shrinkage regularization stabilizes extreme-noise cubic estimation down to \textbf{0.024} at $25\%$ and \textbf{0.033} at $30\%$—outperforming un-debiased ASDS ($0.120\text{--}0.320$), PySINDy~v2.1 ($0.056\text{--}0.071$), and Weak-SINDy ($0.130\text{--}0.218$).
 
 \input{../tables/table3_cumulant_eiv.tex}
 
-\begin{figure*}[t]
+\begin{figure}[!htbp]
   \centering
   \includegraphics[width=\textwidth]{../../results/figures/fig1_noise_robustness.png}
-  \caption{Multi-seed noise stress test ($0\%\text{--}30\%$ Gaussian noise, $95\%$ CI) demonstrating shrinkage-regularized Hermite Cumulant EIV debiasing on Van der Pol and Duffing cubic nonlinearities and Lorenz-63 recovery.}
+  \caption{Multi-seed noise stress test ($0\%\text{--}30\%$ Gaussian noise, $95\%$ CI) demonstrating shrinkage-regularized Hermite Cumulant EIV debiasing on Van der Pol, Duffing, and Lorenz-63.}
   \label{fig:noise}
-\end{figure*}
+\end{figure}
 
-\subsection{6-Factor Ablation, Active Falsification, Drift \& Real-World Records}
-Table~\ref{tab:ablation} and Figure~\ref{fig:ablation} quantify the marginal contribution of every VECSD component at $10\%$ noise across 5 benchmarks $\times$ 5 seeds. Figure~\ref{fig:lorenz} illustrates 3D Lorenz reconstruction and VIFC ($\text{SHD}=0$). In active experimentation, PAFE accelerates entropy collapse over random queries on Lotka--Volterra ($0.698$ vs.\ $0.586$ bits, $+19.2\%$). In streaming drift (Figure~\ref{fig:drift}), SLR detects the SIR$\to$SIRS shift at $t=20.75$ (true $t=20.0$) and restores post-drift $R^2$ from $-84.59$ to $+0.538$. On real-world records (Figure~\ref{fig:real}), VECSD recovers Hudson Bay Lynx--Hare ($\dot{h} = h(0.555 - 0.257\,\ell)$, $R^2=0.943$, plus logarithmic first integral), 1978 Boarding School Influenza ($R_0 \approx 3.84$, $R^2=0.976$), and Mauna Loa $\text{CO}_2$ ($\dot{C}=\frac{1}{5}C$, $R^2=0.838$).
+\subsection{6-Factor Systematic Ablation}
+Table~\ref{tab:ablation} and Figure~\ref{fig:ablation} quantify the marginal contribution of every VECSD component at $10\%$ noise across 5 benchmarks $\times$ 5 seeds. Removing weak-form projection causes the steepest collapse ($0.936 \to 0.755$ SM; $5.3\times$ higher coefficient error), followed by W-LIND symmetry/KKT ($0.862$) and VIFC causal masking ($0.921$), while $K_{\text{eff}}$-MDL rationalization reduces coefficient error from $0.047$ to $0.042$.
 
 \input{../tables/table2_ablation.tex}
 
-\begin{figure}[t]
+\begin{figure}[!htbp]
   \centering
   \includegraphics[width=0.90\linewidth]{../../results/figures/fig2_ablation_matrix.png}
   \caption{6-factor systematic ablation at $10\%$ Gaussian noise (mean $\pm$ 95\% CI across 5 systems $\times$ 5 seeds).}
   \label{fig:ablation}
 \end{figure}
 
-\begin{figure*}[t]
+\clearpage
+\subsection{Differential Causality, Active Falsification, Online Drift \& Real-World Records}
+Figure~\ref{fig:lorenz} shows exact 3D Lorenz-63 attractor reconstruction alongside the VIFC differential causal matrix ($\text{SHD}=0$, cleanly rejecting $z\not\to\dot{x}$). In active experimentation, PAFE accelerates Bayesian posterior entropy collapse over random queries by $+19.2\%$ on Lotka--Volterra ($0.698$ vs.\ $0.586$ bits). In streaming drift (Figure~\ref{fig:drift}), SLR detects the SIR$\to$SIRS shift at $t=20.75$ (true shift $t=20.0$, delay $0.75$) and restores post-drift $R^2$ from $-84.59$ to $+0.538$ while preserving population conservation. Finally, on real-world records (Figure~\ref{fig:real}), VECSD recovers Hudson Bay Lynx--Hare ($\dot{h}=h(0.555-0.257\,\ell)$, $R^2=0.943$, plus logarithmic first integral), 1978 English Boarding School Influenza ($R_0 \approx 3.84$, $R^2=0.976$, $S+I+R$ conservation), and NOAA Mauna Loa $\text{CO}_2$ ($\dot{C}=\frac{1}{5}C$, $R^2=0.838$, scaling symmetry proved).
+
+\begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.95\textwidth]{../../results/figures/fig3_lorenz_discovery.png}
+  \includegraphics[width=0.94\textwidth]{../../results/figures/fig3_lorenz_discovery.png}
   \caption{Left: 3D Lorenz-63 attractor reconstructed from $5\%$ noisy observations. Right: VIFC direct differential causal probability matrix ($\text{SHD}=0$).}
   \label{fig:lorenz}
-\end{figure*}
+\end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!htbp]
   \centering
-  \includegraphics[width=0.88\linewidth]{../../results/figures/fig4_drift_regeneration.png}
+  \includegraphics[width=0.86\linewidth]{../../results/figures/fig4_drift_regeneration.png}
   \caption{Online Dual-Channel CUSUM drift alarm and surgical law regeneration on streaming SIR$\to$SIRS regime shift.}
   \label{fig:drift}
 \end{figure}
 
-\begin{figure*}[t]
+\begin{figure}[!htbp]
   \centering
   \includegraphics[width=\textwidth]{../../results/figures/fig5_real_world_discovery.png}
   \caption{Autonomous law discovery on three real-world experimental records: Hudson Bay Lynx--Hare, 1978 Boarding School Influenza, and NOAA Mauna Loa $\text{CO}_2$.}
   \label{fig:real}
-\end{figure*}
+\end{figure}
 
+\clearpage
 %======================================================================
 \section{Discussion, Limitations, and Broader Impact}
 %======================================================================
@@ -196,7 +273,7 @@ Table~\ref{tab:ablation} and Figure~\ref{fig:ablation} quantify the marginal con
 Three empirical nuances merit emphasis: (1) Hermite cumulant debiasing provides its largest theoretical and empirical gain on nonlinear self-powers ($x^2, x^2 y, x^3$), whereas bilinear cross-products $x_i x_j$ under independent channel noise are already unbiased; (2) above $15\%$ noise on chaotic Lorenz-63, conservative VIFC knockoff pruning can occasionally drop weak true edges, motivating adaptive noise-scaled causal relaxation and PAFE experimental queries; and (3) extending W-LIND to nonlinear Lie point symmetries and PDE conservation laws remains an active direction for future work.
 
 \paragraph{Broader Impact Statement.}
-VECSD and ASDS-OMEGA~v2.0 aim to make scientific discovery from noisy dynamical data transparent, falsifiable, and formally verifiable, reducing reliance on opaque black-box surrogates in physics, epidemiology, and climate science. As with any automated modeling tool, discovered equations should be validated by domain experts prior to high-stakes policy or clinical deployment.
+VECSD aims to make scientific discovery from noisy dynamical data transparent, falsifiable, and formally verifiable, reducing reliance on opaque black-box surrogates in physics, epidemiology, and climate science. As with any automated modeling tool, discovered equations should be validated by domain experts prior to high-stakes policy or clinical deployment.
 
 \bibliography{../references}
 \bibliographystyle{tmlr}

@@ -152,7 +152,7 @@ def generate_latex_tables(
     t3 = [
         r"\begin{table}[t]",
         r"\centering",
-        r"\caption{Direct isolation of Hermite Cumulant EIV Debiasing on cubic self-power nonlinearities (Van der Pol $-x^2 y$ and Duffing $-x^3$) under high noise ($n=" + str(ledger["n_seeds"]) + r"$ seeds).}",
+        r"\caption{Direct isolation of shrinkage-regularized Hermite Cumulant EIV Debiasing on cubic self-power nonlinearities (Van der Pol $-x^2 y$ and Duffing $-x^3$) at $15\%\text{--}30\%$ noise (mean $\pm$ 95\% CI, $n=" + str(ledger["n_seeds"]) + r"$ seeds).}",
         r"\label{tab:cumulant_eiv}",
         r"\small",
         r"\resizebox{\textwidth}{!}{%",
@@ -162,7 +162,7 @@ def generate_latex_tables(
         r"\midrule",
     ]
     for sk, slbl in [("van_der_pol", "Van der Pol"), ("duffing", "Duffing")]:
-        for target_sig in (0.15, 0.20):
+        for target_sig in (0.15, 0.20, 0.25, 0.30):
             mkeys = ["asds_omega_v2", "asds_no_cumulant_debias", "pysindy_official", "weak_sindy"]
             stats_row = []
             for mkey in mkeys:
