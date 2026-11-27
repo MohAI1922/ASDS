@@ -112,12 +112,20 @@ def hermite_debias_monomial(
     noise_vars: np.ndarray,
     enabled: bool = True,
 ) -> np.ndarray:
-    """Compute analytically EIV-debiased monomial prod_j x_j^{p_j} via factor-wise Hermite expansion."""
+    """Compute shrinkage-regularized EIV-debiased monomial prod_j x_j^{p_j}.
+
+    For quadratic factors (deg=2), exact unbiasedness H_2(x; v) = x^2 - v is preserved.
+    For cubic+ self-powers (deg >= 3), James-Stein / Tikhonov SNR shrinkage
+    v_eff = v / (1 + 40*(deg - 2)*v/Var(x)) prevents variance inflation at >=20% noise.
+    """
     out = np.ones(X.shape[0], dtype=float)
     for j, deg in enumerate(powers):
         if deg == 0:
             continue
         var_j = float(noise_vars[j]) if enabled else 0.0
+        if enabled and deg >= 3 and var_j > 0.0:
+            col_var = max(float(np.var(X[:, j])), 1e-8)
+            var_j = var_j / (1.0 + 40.0 * float(deg - 2) * (var_j / col_var))
         out = out * hermite_poly_prob(X[:, j], deg, var_j)
     return out
 

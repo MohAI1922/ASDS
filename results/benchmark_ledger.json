@@ -4010,60 +4010,60 @@
             {
               "sigma": 0.15,
               "symbolic_match": {
-                "mean": 0.9927,
-                "std": 0.0054,
-                "ci95": 0.0067,
+                "mean": 0.9934,
+                "std": 0.0039,
+                "ci95": 0.0049,
                 "n": 5
               },
               "coeff_rel_error": {
-                "mean": 0.0143,
-                "std": 0.0107,
-                "ci95": 0.0133,
+                "mean": 0.013,
+                "std": 0.0078,
+                "ci95": 0.0097,
                 "n": 5
               }
             },
             {
               "sigma": 0.2,
               "symbolic_match": {
-                "mean": 0.7624,
-                "std": 0.1762,
-                "ci95": 0.2188,
+                "mean": 0.8262,
+                "std": 0.1142,
+                "ci95": 0.1418,
                 "n": 5
               },
               "coeff_rel_error": {
-                "mean": 0.2068,
-                "std": 0.268,
-                "ci95": 0.3328,
+                "mean": 0.1141,
+                "std": 0.216,
+                "ci95": 0.2683,
                 "n": 5
               }
             },
             {
               "sigma": 0.25,
               "symbolic_match": {
-                "mean": 0.6771,
-                "std": 0.1792,
-                "ci95": 0.2225,
+                "mean": 0.8568,
+                "std": 0.0706,
+                "ci95": 0.0876,
                 "n": 5
               },
               "coeff_rel_error": {
-                "mean": 0.4085,
-                "std": 0.2182,
-                "ci95": 0.271,
+                "mean": 0.0235,
+                "std": 0.0112,
+                "ci95": 0.0139,
                 "n": 5
               }
             },
             {
               "sigma": 0.3,
               "symbolic_match": {
-                "mean": 0.6729,
-                "std": 0.1362,
-                "ci95": 0.1691,
+                "mean": 0.8205,
+                "std": 0.0067,
+                "ci95": 0.0083,
                 "n": 5
               },
               "coeff_rel_error": {
-                "mean": 0.3233,
-                "std": 0.2636,
-                "ci95": 0.3273,
+                "mean": 0.0334,
+                "std": 0.0137,
+                "ci95": 0.017,
                 "n": 5
               }
             }
@@ -6362,6 +6362,66 @@
           "n_decisions": 1
         },
         "active_falsification": null
+      }
+    },
+    "exp7_high_dim_lorenz96": {
+      "dim": 8,
+      "noise": 0.05,
+      "asds_omega_v2": {
+        "symbolic_match": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95": 0.0,
+          "n": 5
+        },
+        "coeff_rel_error": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci95": 0.0,
+          "n": 5
+        },
+        "shd": {
+          "mean": 5.6,
+          "std": 1.6733,
+          "ci95": 2.0777,
+          "n": 5
+        },
+        "runtime_sec": {
+          "mean": 16.8358,
+          "std": 1.665,
+          "ci95": 2.0674,
+          "n": 5
+        }
+      },
+      "pysindy_official": {
+        "symbolic_match": {
+          "mean": 0.9484,
+          "std": 0.0225,
+          "ci95": 0.0279,
+          "n": 5
+        },
+        "coeff_rel_error": {
+          "mean": 0.0159,
+          "std": 0.0022,
+          "ci95": 0.0028,
+          "n": 5
+        },
+        "wilcoxon_p_vs_asds": 0.03125
+      },
+      "weak_sindy": {
+        "symbolic_match": {
+          "mean": 0.9975,
+          "std": 0.0005,
+          "ci95": 0.0006,
+          "n": 5
+        },
+        "coeff_rel_error": {
+          "mean": 0.0048,
+          "std": 0.001,
+          "ci95": 0.0012,
+          "n": 5
+        },
+        "wilcoxon_p_vs_asds": 0.03125
       }
     }
   },

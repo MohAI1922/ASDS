@@ -703,11 +703,69 @@ def gen_van_der_pol(
     )
 
 
+def gen_lorenz96(
+    dim: int = 8,
+    n_trajectories: int = 4,
+    t_end: float = 12.0,
+    dt: float = 0.02,
+    forcing: float = 8.0,
+    seed: int = 42,
+) -> DynamicalDataset:
+    """High-dimensional Lorenz-96 atmospheric ring: dx_i/dt = (x_{i+1} - x_{i-2})*x_{i-1} - x_i + F.
+
+    Tests sparse causal + symbolic scaling in d >= 8 dimensions with cyclic shift symmetry.
+    """
+    rng = np.random.default_rng(seed)
+
+    def rhs(_t: float, state: np.ndarray) -> np.ndarray:
+        dx = np.empty(dim, dtype=float)
+        for i in range(dim):
+            dx[i] = (state[(i + 1) % dim] - state[(i - 2) % dim]) * state[(i - 1) % dim] - state[i] + forcing
+        return dx
+
+    ics = []
+    for k in range(n_trajectories):
+        x0 = np.full(dim, forcing, dtype=float) + rng.normal(0.0, 1.5, size=dim)
+        x0[k % dim] += 0.8
+        ics.append(x0)
+
+    t_list, trajs = _integrate_multi(rhs, ics, (0.0, t_end), dt)
+    vnames = [f"x{i+1}" for i in range(dim)]
+    gt_eqs = []
+    causal_adj = np.zeros((dim, dim), dtype=int)
+    for i in range(dim):
+        ip1 = (i + 1) % dim
+        im1 = (i - 1) % dim
+        im2 = (i - 2) % dim
+        gt_eqs.append(f"({vnames[ip1]} - {vnames[im2]})*{vnames[im1]} - {vnames[i]} + {int(forcing)}")
+        for j in (ip1, im1, im2, i):
+            causal_adj[j, i] = 1
+
+    return DynamicalDataset(
+        name=f"lorenz96_{dim}d",
+        domain=f"High-Dimensional Atmospheric Chaos (d={dim})",
+        var_names=vnames,
+        t_list=t_list,
+        trajectories=[tr.copy() for tr in trajs],
+        clean_trajectories=trajs,
+        ground_truth_equations=gt_eqs,
+        ground_truth_causal_adj=causal_adj,
+        ground_truth_invariants=[],
+        ground_truth_symmetries=[f"Cyclic shift Z_{dim}: x_i -> x_{{i+1}}"],
+        true_divergence=f"-{dim}",
+        rhs_fn=rhs,
+        state_bounds=[(-10.0, 15.0)] * dim,
+        metadata={"dim": dim, "forcing": forcing},
+    )
+
+
 def generate_synthetic_dataset(name: str, seed: int = 42, **kwargs: Any) -> DynamicalDataset | PDEDataset:
     """Factory for all synthetic ground-truth datasets."""
     key = name.lower().strip()
     registry: dict[str, Callable[..., DynamicalDataset | PDEDataset]] = {
         "lorenz": lambda: gen_lorenz(seed=seed, **kwargs),
+        "lorenz96": lambda: gen_lorenz96(seed=seed, **kwargs),
+        "lorenz96_8d": lambda: gen_lorenz96(dim=8, seed=seed, **kwargs),
         "lotka_volterra": lambda: gen_lotka_volterra(seed=seed, **kwargs),
         "sir": lambda: gen_sir(seed=seed, **kwargs),
         "sir_regime_drift": lambda: gen_sir_regime_drift(**kwargs),
